@@ -3,3 +3,6 @@ SpaceScan-crash.log
 dist/
 graft/
 *.scan
+.local/
+Diskweft.exe
+Diskweft-crash.log

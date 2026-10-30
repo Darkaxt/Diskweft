@@ -1,3 +1,37 @@
+# Diskweft
+
+A Windows disk-usage explorer forked from
+[SpaceScan](https://github.com/limburatorul/spacescan), with planned progressive
+scan results and Windows 11 appearance. The name complements
+[Pathweft](https://github.com/Darkaxt/Pathweft), a separate file-manager project.
+
+**Development status:** specification and S0 baseline setup. Live folder results,
+independent application identity and Windows theming are not implemented yet.
+The inherited executable still identifies as SpaceScan; do not install or use it
+as a Diskweft release. This repository has no Diskweft product release yet.
+
+- [Authoritative specification](docs/SPECIFICATION.md)
+- [Staged plan and current reconciliation](docs/IMPLEMENTATION-PLAN.md)
+- [Development and baseline verification](docs/DEVELOPMENT.md)
+
+The planned outcome includes live folder sizes, file counts and statistics for
+both ordinary traversal and NTFS/MFT scans, stable navigation during scanning,
+honest partial-result states, and restrained Windows light/dark themes with accent
+support. Existing search, duplicate detection, history, reports and file actions
+remain compatibility requirements.
+
+The source baseline is SpaceScan 1.4.1, commit
+[`313271a`](https://github.com/limburatorul/spacescan/commit/313271a0bb34e63c8182c49e9c71caabbd782a4a).
+It uses WPF and .NET Framework. The existing `build.cmd` compiles the upstream
+baseline; the inherited installer must be isolated before it can ship the fork.
+
+MIT licensed. Preserve the original Protagonist Labs notice in [LICENSE](LICENSE).
+
+## Inherited upstream documentation
+
+The following describes SpaceScan's baseline behavior, not completed Diskweft
+enhancements. Its installer, integration and product links still target upstream.
+
 # SpaceScan
 
 Finds what is filling up a Windows drive. Free, no limits, no nagging: it reads the NTFS Master File
