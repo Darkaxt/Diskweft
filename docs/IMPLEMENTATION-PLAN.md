@@ -8,7 +8,7 @@ Updated: 2026-10-30. Current authorization: S1, "Start stage 1".
 | Stage | Status | Complete specified outcome | Requirement ownership |
 | --- | --- | --- | --- |
 | S0 - Fork, specification and reproducible baseline | COMPLETE | Public named fork, owned checkout, complete requirements/stage map, inspected baseline build/scanner evidence and published setup documents | ENV-01..04 |
-| S1 - Independent identity and classic live scanning | ACTIVE | Real folder/UNC scan -> consistent live tree/statistics -> navigation -> correct terminal result, with independent Diskweft identities | ID-01; SCAN-01,03..07 for classic; COMPAT-01 for affected classic paths |
+| S1 - Independent identity and classic live scanning | COMPLETE | Real folder/UNC scan -> consistent live tree/statistics -> navigation -> correct terminal result, with independent Diskweft identities | ID-01; SCAN-01,03..07 for classic; COMPAT-01 for affected classic paths |
 | S2 - Progressive NTFS/MFT scanning | NOT STARTED | Real volume -> progressive resolved folders/statistics -> navigation -> final result; safe fallback and all-drives integration | SCAN-02; SCAN-03..07 for MFT/mixed scans; affected COMPAT-01, VERIFY-01 |
 | S3 - Windows 11 appearance and accents | NOT STARTED | Native light/dark/high-contrast UI, Appearance persistence and live accent/theme changes across completed scan workflows | UI-01..04 |
 | S4 - Integrated verification and final delivery | NOT STARTED | Full specification reconciliation, compatibility/performance evidence, verified final commit and independently retrieved normal release | PERF-01, VERIFY-01, DELIVER-01; integrated ID/SCAN/UI/COMPAT acceptance |
@@ -30,8 +30,8 @@ may begin beyond S1 under the current instruction.
 | ENV-04 | Complete mapping, design/verification contract, development notes, actual evidence, private reference handling and scratch cleanup | PASS: committed/published documents and helpers read back; all requirements assigned; private reference ignored; fixture/preflight cleanup applied |
 
 S0 reconciliation: ENV-01..04 satisfied and verified. No remaining S0 acceptance
-criteria, blockers or tracked deferrals. Only S0 is COMPLETE; S1 alone is ACTIVE
-under the subsequent user instruction. S2-S5 remain NOT STARTED.
+criteria, blockers or tracked deferrals. S0 and S1 are COMPLETE; no stage is ACTIVE.
+S2-S5 remain NOT STARTED.
 Evidence: [S0 baseline](verification/S0-BASELINE.md).
 
 ## S1 current reconciliation
@@ -45,11 +45,13 @@ Evidence: [S0 baseline](verification/S0-BASELINE.md).
 | SCAN-06,07 | PASS: partial extension/top-file publication, pending/inaccessible/stopped cues, discovered-byte shares and partial snapshot provenance. |
 | affected COMPAT-01 | PASS: name/path exclusions, native long paths, real fixture ACL denial/restoration, existing reparse exclusion, search, duplicate hashing, snapshots/compare/history, CSV/HTML/CLI and busy destructive-key refusal. |
 
-Current evidence: [S1 verification](verification/S1-CLASSIC-LIVE.md). Technical
-criteria are satisfied. S1 remains ACTIVE until its verified source/evidence are
-committed, pushed and independently read back. This internal publication blocker
-is resolved by that source delivery; no product release belongs to S1. No tracked
-deferrals. The system-replacement stage is documented, not started.
+Current evidence: [S1 verification](verification/S1-CLASSIC-LIVE.md). Every assigned
+criterion is satisfied. Source/evidence commit
+`36e4f3a6d0ceac7758573344953d3b3f515f9cea` was pushed and independently read back
+through the GitHub bridge, with matching remote HEAD and key source/document blobs.
+S1 is COMPLETE with no remaining acceptance criteria, blockers or tracked
+deferrals. No product release belongs to S1. The system-replacement stage is
+documented, not started.
 
 ## Later-stage acceptance and verification
 

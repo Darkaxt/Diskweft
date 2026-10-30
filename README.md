@@ -5,8 +5,8 @@ A Windows disk-usage explorer forked from
 scan results and Windows 11 appearance. The name complements
 [Pathweft](https://github.com/Darkaxt/Pathweft), a separate file-manager project.
 
-**Development status:** S0 is COMPLETE. S1's independent identity and classic live
-scanning are implemented and verified; source publication is being finalized.
+**Development status:** S0 and S1 are COMPLETE. S1's independent identity and
+classic live scanning are implemented, verified and published as source.
 S2-S5 are NOT STARTED. Progressive MFT results and Windows theming are not yet
 implemented. The internal build is `0.0.1-stage1-development`; there is no
 Diskweft product release yet. S4 owns final delivery; S5 owns the planned system
