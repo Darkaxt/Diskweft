@@ -21,22 +21,23 @@ using Microsoft.VisualBasic.FileIO;
 using Microsoft.Win32;
 using WinForms = System.Windows.Forms;
 
-[assembly: System.Reflection.AssemblyTitle("SpaceScan")]
-[assembly: System.Reflection.AssemblyProduct("SpaceScan")]
-[assembly: System.Reflection.AssemblyCompany("Protagonist Labs")]
-[assembly: System.Reflection.AssemblyCopyright("MIT licence")]
-[assembly: System.Reflection.AssemblyVersion("1.4.1")]
-[assembly: System.Reflection.AssemblyFileVersion("1.4.1")]
+[assembly: System.Reflection.AssemblyTitle("Diskweft")]
+[assembly: System.Reflection.AssemblyProduct("Diskweft")]
+[assembly: System.Reflection.AssemblyCompany("Darkaxt")]
+[assembly: System.Reflection.AssemblyCopyright("MIT; Protagonist Labs and Darkaxt")]
+[assembly: System.Reflection.AssemblyVersion("0.0.1")]
+[assembly: System.Reflection.AssemblyFileVersion("0.0.1")]
+[assembly: System.Reflection.AssemblyInformationalVersion("0.0.1-stage1-development")]
 
 // The folder the Protagonist Labs apps share on this PC (%APPDATA%\ProtagonistLabs): each app writes its card in
-// apps\, and what it offers the others in data\. SpaceScan writes its card, and reads Shelf's games, to name their
+// apps\, and what it offers the others in data\. Diskweft writes its card, and reads Shelf's games, to name their
 // install folders and offer to move a game with Shelf, and the other cards, for Settings → Integration. Anything read
 // from here may be missing or broken: that just means "not there".
 static class Ecosystem
 {
-    // Test only: SPACESCAN_TEST_ROOT stands in for %APPDATA% (the shared folder, SpaceScan's data and the one it moves
-    // from) and keeps the copy out of the registry, so a UI check never touches the user's own SpaceScan.
-    internal static readonly string TestRoot = Environment.GetEnvironmentVariable("SPACESCAN_TEST_ROOT");
+    // Test only: DISKWEFT_TEST_ROOT stands in for %APPDATA% (the shared folder, Diskweft's data and the one it moves
+    // from) and keeps the copy out of the registry, so a UI check never touches the user's own Diskweft.
+    internal static readonly string TestRoot = Environment.GetEnvironmentVariable("DISKWEFT_TEST_ROOT");
     internal static readonly string AppData = string.IsNullOrEmpty(TestRoot) ? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) : TestRoot;
     internal static string Folder = Path.Combine(AppData, "ProtagonistLabs");
     internal static readonly string[][] PaidApps = { new[] { "shelf", "Shelf" }, new[] { "stash", "Stash" }, new[] { "frostpane", "Frostpane" }, new[] { "reel", "Reel" }, new[] { "planner", "Planner" }, new[] { "reminder", "Reminder" } };
@@ -50,11 +51,11 @@ static class Ecosystem
     {
         try
         {
-            string dir = Path.Combine(Folder, "apps"), path = Path.Combine(dir, "spacescan.json");
+            string dir = Path.Combine(Folder, "apps"), path = Path.Combine(dir, "diskweft.json");
             Directory.CreateDirectory(dir);
             string json = "{\n  \"schema\": 1,\n  \"updated\": " + Q(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture))
-                + ",\n  \"id\": \"spacescan\",\n  \"name\": \"SpaceScan\",\n  \"version\": " + Q(version) + ",\n  \"exe\": " + Q(exe)
-                + ",\n  \"edition\": \"free\",\n  \"paid\": false,\n  \"page\": \"https://protagonistlabs.app/spacescan/\""
+                + ",\n  \"id\": \"diskweft\",\n  \"name\": \"Diskweft\",\n  \"version\": " + Q(version) + ",\n  \"exe\": " + Q(exe)
+                + ",\n  \"edition\": \"free\",\n  \"paid\": false,\n  \"page\": \"https://github.com/Darkaxt/Diskweft\""
                 + ",\n  \"commands\": { \"scan\": [\"{path}\"] }\n}\n";
             File.WriteAllText(path + ".tmp", json, new UTF8Encoding(false));
             if (File.Exists(path)) File.Replace(path + ".tmp", path, null); else File.Move(path + ".tmp", path);
@@ -221,35 +222,8 @@ static class Ecosystem
         return exe == null ? null : new[] { exe, "--move \"" + game.Id + "\"" };
     }
 
-    // SpaceScan's own exclusions and scan history: %APPDATA%\ProtagonistLabs\SpaceScan since 1.4.0, with every studio
-    // app's data. Main sets it from MoveData before anything is read, so loading the exe (check.ps1) moves nothing.
-    internal static string Data = Path.Combine(Folder, "SpaceScan");
-
-    // The old folder (%APPDATA%\SpaceScan) moved to the new one once, the same rule as the installer's [Code]: a rename,
-    // never a copy, so it is instant and never half done. A new folder that already holds something is never mixed
-    // with the old one (the old stays, move.log says so); a failed rename (a file held open) means this session uses
-    // the old folder and the next start tries again. Returns the folder to use.
-    internal static string MoveData(string old, string now)
-    {
-        if (!Directory.Exists(old)) return now;
-        try
-        {
-            if (Directory.Exists(now))
-            {
-                if (Directory.EnumerateFileSystemEntries(now).Any())
-                {
-                    File.AppendAllText(Path.Combine(now, "move.log"), DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "  " + old + " was left where it is: " + now + " already holds data\r\n");
-                    return now;
-                }
-                Directory.Delete(now);
-            }
-            Directory.CreateDirectory(Path.GetDirectoryName(now));
-            Directory.Move(old, now);
-            return now;
-        }
-        catch (IOException) { return old; }
-        catch (UnauthorizedAccessException) { return old; }
-    }
+    // Independent Diskweft profile. S5 owns any explicit upstream-data migration.
+    internal static string Data = Path.Combine(Path.Combine(AppData, "Darkaxt"), "Diskweft");
 
     // An installed app's exe from its uninstall entry (DisplayIcon): per machine first, in both registry views, then
     // for this user. The studio's apps install per machine now; their older versions did per user.
@@ -273,11 +247,11 @@ static class Ecosystem
 }
 
 // Self-update, the way Sysoptimizer does it: GitHub's latest release, its *setup.exe checked against the size and
-// SHA-256 GitHub published for it, then the installer started elevated (UAC), which closes SpaceScan, installs
+// SHA-256 GitHub published for it, then the installer started elevated (UAC), which closes Diskweft, installs
 // silently and starts it again.
 static class Updater
 {
-    const string Repo = "limburatorul/spacescan";
+    const string Repo = "Darkaxt/Diskweft";
 
     internal class Release { public Version Version; public string Tag, Url, Sha256; public long Size; }
 
@@ -303,7 +277,7 @@ static class Updater
         Dictionary<string, object> root;
         using (var web = new System.Net.WebClient())
         {
-            web.Headers[System.Net.HttpRequestHeader.UserAgent] = "SpaceScan";
+            web.Headers[System.Net.HttpRequestHeader.UserAgent] = "Diskweft";
             root = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(web.DownloadString(Feed));
         }
         if (root == null) throw new FormatException("empty answer");
@@ -312,7 +286,9 @@ static class Updater
         if (!Version.TryParse(tag.TrimStart('v', 'V'), out version)) throw new FormatException("tag " + tag + " is not a version");
         if (version <= Current) return null;
         var asset = ((System.Collections.IEnumerable)root["assets"]).OfType<Dictionary<string, object>>()
-            .FirstOrDefault(a => (a["name"] as string ?? "").EndsWith("setup.exe", StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(a => (a["name"] as string ?? "").StartsWith("Diskweft-", StringComparison.Ordinal)
+                && (a["name"] as string ?? "").EndsWith("-setup.exe", StringComparison.OrdinalIgnoreCase)
+                && ((string)a["browser_download_url"]).StartsWith("https://github.com/Darkaxt/Diskweft/releases/download/", StringComparison.Ordinal));
         if (asset == null) return null;
         object d;
         string digest = asset.TryGetValue("digest", out d) ? d as string : null;
@@ -323,10 +299,10 @@ static class Updater
     /// <summary>Downloads the installer to %TEMP% and returns its path; a copy that differs from what GitHub published is deleted.</summary>
     internal static string Download(Release release)
     {
-        string path = Path.Combine(Path.GetTempPath(), "SpaceScan-" + release.Version + "-setup.exe");
+        string path = Path.Combine(Path.GetTempPath(), "Diskweft-" + release.Version + "-setup.exe");
         using (var web = new System.Net.WebClient())
         {
-            web.Headers[System.Net.HttpRequestHeader.UserAgent] = "SpaceScan";
+            web.Headers[System.Net.HttpRequestHeader.UserAgent] = "Diskweft";
             web.DownloadFile(release.Url, path);
         }
         // The size catches a cut-off download, the checksum everything else: this file is about to run as an installer.
@@ -343,7 +319,7 @@ static class Updater
         return path;
     }
 
-    /// <summary>Starts the installer through the shell, elevated: SpaceScan installs per machine since 1.4.0. The
+    /// <summary>Starts the installer through the shell, elevated: Diskweft installs per machine since 1.4.0. The
     /// installer stops this process and starts the new version when it is done (its [Run] entry for a silent install);
     /// the caller closes right after. Throws Win32Exception when the user says no to UAC: nothing changed then.</summary>
     internal static void Install(string installer)
@@ -376,6 +352,7 @@ public class Row : INotifyPropertyChanged
     internal Node Node;      // folder row
     internal FileEntry File; // file row
     internal int Level;
+    internal string ListingText = "";
     bool expanded;
 
     public event PropertyChangedEventHandler PropertyChanged;
@@ -383,16 +360,18 @@ public class Row : INotifyPropertyChanged
 
     internal object Tag { get { return Node != null ? (object)Node : File; } }
     internal bool IsExpanded { get { return expanded; } set { expanded = value; Changed(); } }
-    internal bool CanExpand { get { return Node != null && (Node.Files > 0 || Node.Dirs.Count > 0); } }
+    internal bool CanExpand { get { return Node != null && (Node.Files > 0 || Node.Dirs.Count > 0 || Node.State == DirectoryState.Pending || Node.State == DirectoryState.Scanning); } }
     long Size { get { return Node != null ? Node.Size : File.Size; } }
     long ParentSize { get { var p = Node != null ? Node.Parent : File.Dir; return p != null ? p.Size : Size; } }
-    double Fraction { get { return ParentSize > 0 ? (double)Size / ParentSize : 0; } }
+    bool PendingFileShare { get { return File != null && File.Dir.State != DirectoryState.Complete; } }
+    double Fraction { get { return !PendingFileShare && ParentSize > 0 ? (double)Size / ParentSize : 0; } }
 
     public string Chevron { get { return !CanExpand ? "" : expanded ? "▾" : "▸"; } }
     public Thickness Indent { get { return new Thickness(Level * 18, 0, 0, 0); } }
     public string IconData { get { return Node != null ? FolderIcon : File.Summary ? "M0,0" : FileIcon; } }
     public Brush IconBrush { get { return Node != null ? Brand.Accent : Brand.Dimmer; } }
-    public string DisplayName { get { return Node != null ? Node.Name + (Node.Denied ? "   (access denied)" : "") + GameLabel + BackupLabel : File.Name; } }
+    public string DisplayName { get { return Node != null ? Node.Name + StateLabel + (ListingText.Length > 0 ? "   (" + ListingText + ")" : "") + GameLabel + BackupLabel : File.Name; } }
+    string StateLabel { get { return Node.Denied ? "   (inaccessible)" : Node.State == DirectoryState.Complete ? "" : "   (" + Node.State.ToString().ToLowerInvariant() + ")"; } }
     string GameLabel { get { var g = Ecosystem.GameAt(Node); return g == null ? "" : string.Equals(g.Name, Node.Name, StringComparison.OrdinalIgnoreCase) ? "   · in Shelf" : "   · " + g.Name + " in Shelf"; } }
     // Backup Labs: the folder its backups fill, or a folder it backs up
     string BackupLabel
@@ -406,11 +385,11 @@ public class Row : INotifyPropertyChanged
         }
     }
     public Brush NameBrush { get { return Node != null ? (Node.Denied ? Brand.Pink : Brand.Text) : File.Summary ? Brand.Dimmer : Brand.Dim; } }
-    public double BarWidth { get { return Math.Max(Size > 0 ? 1 : 0, Fraction * 150); } }
+    public double BarWidth { get { return PendingFileShare ? 0 : Math.Max(Size > 0 ? 1 : 0, Fraction * 150); } }
     public Brush BarBrush { get { return Node != null ? Brand.Accent : Brand.Dim; } }
-    public string SizeText { get { return Brand.Fmt(Size); } }
-    public string PctText { get { return (Fraction * 100).ToString("0.0") + " %"; } }
-    public string FilesText { get { return Node != null ? Node.Files.ToString("N0") : ""; } }
+    public string SizeText { get { return Node != null && Node.State == DirectoryState.Pending ? "pending" : Brand.Fmt(Size); } }
+    public string PctText { get { return PendingFileShare || (Node != null && Node.State == DirectoryState.Pending) ? "pending" : (Fraction * 100).ToString("0.0") + " %"; } }
+    public string FilesText { get { return Node != null ? (Node.State == DirectoryState.Pending ? "pending" : Node.Files.ToString("N0")) : ""; } }
 }
 
 public class ExtRow
@@ -441,6 +420,7 @@ class SortableList<T>
     readonly Dictionary<string, Button> headers = new Dictionary<string, Button>();
     readonly Dictionary<string, string> labels = new Dictionary<string, string>();
     List<T> items = new List<T>();
+    readonly ObservableCollection<T> displayed = new ObservableCollection<T>();
     string key;
     bool asc;
 
@@ -449,6 +429,7 @@ class SortableList<T>
         this.list = list;
         this.keys = keys;
         this.key = initial;
+        list.ItemsSource = displayed;
         foreach (var kv in buttons)
         {
             string k = kv.Key;
@@ -459,16 +440,39 @@ class SortableList<T>
     }
 
     public List<T> Items { get { return items; } }
-    public void Set(IEnumerable<T> source) { items = source.ToList(); Apply(); }
+    public void Set(IEnumerable<T> source, bool preserveOrder = false) { items = source.ToList(); Apply(preserveOrder); }
     public void Clear() { items = new List<T>(); Apply(); }
     public void Remove(Predicate<T> gone) { items.RemoveAll(gone); Apply(); }
-    public void Label(string column, string text) { labels[column] = text; Apply(); }
+    public void Label(string column, string text) { if (labels[column] == text) return; labels[column] = text; Apply(); }
 
-    void Apply()
+    static string ItemIdentity(T item)
+    {
+        object value = item;
+        var ext = value as ExtRow; if (ext != null) return ext.Ext;
+        var top = value as TopRow; if (top != null) return top.File.FullPath;
+        var found = value as FoundRow; if (found != null) return found.File.FullPath;
+        var comparison = value as CmpRow; if (comparison != null) return comparison.Path;
+        return value.ToString();
+    }
+    void Apply(bool preserveOrder = false)
     {
         var sorted = items.OrderBy(x => keys[key](x)).ToList();
         if (!asc) sorted.Reverse();
-        list.ItemsSource = sorted;
+        var selected = new HashSet<string>(list.SelectedItems.Cast<T>().Select(ItemIdentity), StringComparer.OrdinalIgnoreCase);
+        if (preserveOrder && displayed.Count > 0)
+        {
+            var remaining = sorted.ToDictionary(ItemIdentity, StringComparer.OrdinalIgnoreCase);
+            var stable = new List<T>();
+            foreach (var item in displayed) { T next; if (remaining.TryGetValue(ItemIdentity(item), out next)) { stable.Add(next); remaining.Remove(ItemIdentity(item)); } }
+            stable.AddRange(sorted.Where(item => remaining.ContainsKey(ItemIdentity(item))));
+            sorted = stable;
+        }
+        for (int i = 0; i < sorted.Count; i++)
+        {
+            if (i < displayed.Count) displayed[i] = sorted[i]; else displayed.Add(sorted[i]);
+        }
+        while (displayed.Count > sorted.Count) displayed.RemoveAt(displayed.Count - 1);
+        foreach (var item in displayed) if (selected.Contains(ItemIdentity(item))) list.SelectedItems.Add(item);
         foreach (var kv in headers) kv.Value.Content = labels[kv.Key] + (kv.Key == key ? (asc ? "  ↑" : "  ↓") : "");
     }
 }
@@ -519,7 +523,7 @@ public class CmpRow
     public Brush DeltaBrush { get; set; }
 }
 
-class MainUI
+partial class MainUI
 {
     const int MaxFilesShown = 1000;
 
@@ -668,6 +672,7 @@ class MainUI
         maxBtn.Click += delegate { if (Window.WindowState == WindowState.Maximized) SystemCommands.RestoreWindow(Window); else SystemCommands.MaximizeWindow(Window); };
         Find<Button>("closeBtn").Click += delegate { Window.Close(); };
 
+        ConfigureLifetime();
         scanBtn.Click += delegate { StartOrStop(); };
         pathBox.KeyDown += (s, e) => { if (e.Key == Key.Enter) { e.Handled = true; StartOrStop(); } };
         browseBtn.Click += delegate
@@ -715,15 +720,15 @@ class MainUI
         excludePopup.Opened += delegate { RefreshIntegration(); };
         LoadExclusions();
         RegisterSelf();
-        ThreadPool.QueueUserWorkItem(delegate { Ecosystem.WriteCard(ExePath, typeof(MainUI).Assembly.GetName().Version.ToString(3)); });
+        RunOwned(() => Ecosystem.WriteCard(ExePath, typeof(MainUI).Assembly.GetName().Version.ToString(3)), null);
         // Updates: a few seconds after start, then every hour while open; Settings has the manual check.
         var updates = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
         updates.Tick += delegate { updates.Interval = TimeSpan.FromHours(1); CheckForUpdates(false); };
-        updates.Start();
-        Find<TextBlock>("updateText").Text = "SpaceScan " + Updater.Current;
+        if (Ecosystem.TestRoot == null) updates.Start();
+        Find<TextBlock>("updateText").Text = "Diskweft " + Updater.Current;
         Find<Button>("updateBtn").Click += delegate { CheckForUpdates(true); };
         Find<Button>("whatsNewBtn").Click += delegate { excludePopup.IsOpen = false; WhatsNew.Open(Window); };
-        Window.ContentRendered += delegate { WhatsNew.OpenOnceAfterUpdate(Window); }; // an owner must have been shown
+        if (Ecosystem.TestRoot == null) Window.ContentRendered += delegate { WhatsNew.OpenOnceAfterUpdate(Window); }; // an owner must have been shown
         Find<Button>("findBtn").Click += delegate { RunSearch(); };
         Find<Button>("dupBtn").Click += delegate { RunDupes(); };
         foreach (var box in new[] { findName, findSize, findAge })
@@ -849,7 +854,7 @@ class MainUI
 
     internal static int Dwm(IntPtr h, int attr, int value) { return DwmSetWindowAttribute(h, attr, ref value, 4); }
 
-    void Error(string msg) { MessageBox.Show(Window, msg, "SpaceScan", MessageBoxButton.OK, MessageBoxImage.Error); }
+    void Error(string msg) { MessageBox.Show(Window, msg, "Diskweft", MessageBoxButton.OK, MessageBoxImage.Error); }
 
     void SetView(int v)
     {
@@ -879,7 +884,7 @@ class MainUI
         Scanner.FilesSeen = 0;
         Scanner.Total = 0;
         SetBusy(true);
-        new Thread(() => work(), 256 * 1024 * 1024) { IsBackground = true }.Start();
+        RunOwned(work, null, true, true);
     }
 
     void EndJob(string text)
@@ -911,7 +916,7 @@ class MainUI
         }
     }
 
-    const string FileLabsPage = "https://protagonistlabs.app/filelabs/?utm_source=spacescan&utm_medium=app&utm_campaign=open-in-filelabs";
+    const string FileLabsPage = "https://protagonistlabs.app/filelabs/?utm_source=diskweft&utm_medium=app&utm_campaign=open-in-filelabs";
 
     // File Labs' card, else its uninstall entry (its installer's AppId never changes), per machine or per user
     static string FileLabsExe
@@ -919,14 +924,14 @@ class MainUI
         get { return Ecosystem.Exe("filelabs") ?? Ecosystem.Uninstalled("{7E4C2B9A-3F1D-4C8E-9A6B-51D0C2E8F4A7}_is1"); }
     }
 
-    // Publishes where we live, so File Labs (or anything else) can offer "Scan with SpaceScan"; and when the Explorer
+    // Publishes where we live, so File Labs (or anything else) can offer "Scan with Diskweft"; and when the Explorer
     // menu is on, points it here too (the exe moved to Program Files in 1.4.0).
     static void RegisterSelf()
     {
-        if (Ecosystem.TestRoot != null) return; // a test copy must not repoint the user's own SpaceScan
+        if (Ecosystem.TestRoot != null) return; // a test copy must not repoint the user's own Diskweft
         try
         {
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\SpaceScan"))
+            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Darkaxt\Diskweft"))
                 if (k != null) k.SetValue("ExePath", ExePath);
             if (ShellMenuInstalled) WriteShellMenu(true);
         }
@@ -935,9 +940,9 @@ class MainUI
 
     static readonly string[] ShellKeys =
     {
-        @"Software\Classes\Directory\shell\SpaceScan",
-        @"Software\Classes\Drive\shell\SpaceScan",
-        @"Software\Classes\Directory\Background\shell\SpaceScan"
+        @"Software\Classes\Directory\shell\Diskweft",
+        @"Software\Classes\Drive\shell\Diskweft",
+        @"Software\Classes\Directory\Background\shell\Diskweft"
     };
 
     static bool ShellMenuInstalled
@@ -953,12 +958,13 @@ class MainUI
 
     static void WriteShellMenu(bool on)
     {
+        if (Ecosystem.TestRoot != null) throw new InvalidOperationException("Shell integration is disabled for isolated trials.");
         foreach (var key in ShellKeys)
         {
             if (!on) { Registry.CurrentUser.DeleteSubKeyTree(key, false); continue; }
             using (var k = Registry.CurrentUser.CreateSubKey(key))
             {
-                k.SetValue("", "Scan with SpaceScan");
+                k.SetValue("", "Scan with Diskweft");
                 k.SetValue("Icon", ExePath);
             }
             using (var c = Registry.CurrentUser.CreateSubKey(key + @"\command"))
@@ -989,10 +995,10 @@ class MainUI
             {
                 checking = false;
                 text.Text = manual && failed ? Updater.CheckFailed
-                    : "SpaceScan " + Updater.Current + (manual && release == null ? " — no update found" : "");
+                    : "Diskweft " + Updater.Current + (manual && release == null ? " — no update found" : "");
                 if (release == null || (!manual && release.Tag == dismissedTag)) return;
-                if (MessageBox.Show(Window, "SpaceScan " + release.Version + " is out (you have " + Updater.Current + ").\n\nInstall it now? Windows will ask for permission, then SpaceScan closes, updates and opens again.",
-                        "SpaceScan update", MessageBoxButton.YesNo, MessageBoxImage.Information) != MessageBoxResult.Yes)
+                if (MessageBox.Show(Window, "Diskweft " + release.Version + " is out (you have " + Updater.Current + ").\n\nInstall it now? Windows will ask for permission, then Diskweft closes, updates and opens again.",
+                        "Diskweft update", MessageBoxButton.YesNo, MessageBoxImage.Information) != MessageBoxResult.Yes)
                 {
                     dismissedTag = release.Tag;
                     return;
@@ -1005,7 +1011,7 @@ class MainUI
     void Install(Updater.Release release)
     {
         checking = true; // no second check while this one downloads
-        status.Text = "Downloading SpaceScan " + release.Version + "…";
+        status.Text = "Downloading Diskweft " + release.Version + "…";
         ThreadPool.QueueUserWorkItem(delegate
         {
             string installer = null, error = null;
@@ -1042,7 +1048,7 @@ class MainUI
     // once, last, when a bought app is on this PC. Read again each time the panel opens.
     void RefreshWorksWith()
     {
-        const string utm = "utm_source=spacescan&utm_medium=app&utm_campaign=works-with";
+        const string utm = "utm_source=diskweft&utm_medium=app&utm_campaign=works-with";
         var panel = Find<StackPanel>("worksWith");
         panel.Children.Clear();
         Ecosystem.Forget();
@@ -1152,13 +1158,15 @@ class MainUI
         {
             if (!File.Exists(ExcludeFile)) return;
             excludeBox.Text = File.ReadAllText(ExcludeFile);
-            Exclude.Set(excludeBox.Text.Split('\n'));
+            if (busy) return;
+        Exclude.Set(excludeBox.Text.Split('\n'));
         }
         catch (IOException) { } // no rules is a fine fallback
     }
 
     void SaveExclusions()
     {
+        if (busy) return;
         Exclude.Set(excludeBox.Text.Split('\n'));
         try
         {
@@ -1177,7 +1185,7 @@ class MainUI
     void SaveSnapshot()
     {
         if (root == null || busy) return;
-        var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "SpaceScan snapshot (*.scan)|*.scan",
+        var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Diskweft snapshot (*.scan)|*.scan",
             FileName = root.Name.Replace(":", "").Replace("\\", "-").Trim('-') + "-" + DateTime.Now.ToString("yyyy-MM-dd") + ".scan" };
         if (dlg.ShowDialog(Window) != true) return;
         SaveSnapshotTo(dlg.FileName);
@@ -1202,7 +1210,7 @@ class MainUI
     void CompareWithSnapshot()
     {
         if (root == null || busy) return;
-        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "SpaceScan snapshot (*.scan)|*.scan" };
+        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Diskweft snapshot (*.scan)|*.scan" };
         if (dlg.ShowDialog(Window) == true) CompareWith(dlg.FileName);
     }
 
@@ -1217,9 +1225,11 @@ class MainUI
             DateTime taken;
             string snapRoot;
             List<Change> diff;
+            bool legacyUnknown;
             try
             {
                 var before = Snapshot.Load(file, out taken, out snapRoot);
+                legacyUnknown = before.Outcome == "legacy-unknown";
                 diff = Comparer.Run(before, now, 20000);
             }
             catch (Exception ex)
@@ -1236,7 +1246,8 @@ class MainUI
                 long total = now.Size - diff.Where(c => c.Path == now.Name).Select(c => c.Before).DefaultIfEmpty(now.Size).First();
                 cmpSummary.Text = string.Format("{0} taken {1:yyyy-MM-dd HH:mm}{2}  •  {3:N0} folders changed  •  total {4}{5}",
                     Path.GetFileName(file), taken,
-                    snapRoot.Equals(now.Name, StringComparison.OrdinalIgnoreCase) ? "" : "  •  WARNING: snapshot is of " + snapRoot,
+                    (snapRoot.Equals(now.Name, StringComparison.OrdinalIgnoreCase) ? "" : "  •  WARNING: snapshot is of " + snapRoot)
+                        + (legacyUnknown ? "  •  legacy snapshot completeness unknown" : ""),
                     diff.Count, total >= 0 ? "+" : "-", Brand.Fmt(Math.Abs(total)));
                 cmpHint.Text = "No differences found.";
                 cmpHint.Visibility = diff.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -1270,57 +1281,6 @@ class MainUI
     }
 
     // Every fixed drive in one tree, each root kept under a virtual "This PC" node.
-    void ScanAllDrives()
-    {
-        if (busy) return;
-        var drives = DriveInfo.GetDrives().Where(d => d.IsReady && d.DriveType == DriveType.Fixed).Select(d => d.Name).ToList();
-        if (drives.Count == 0) { Error("No local drives found."); return; }
-        Stats.Reset();
-        Scanner.DeniedCount = 0;
-        root = null;
-        rows.Clear();
-        findSort.Clear();
-        dups.Clear();
-        cmpSort.Clear();
-        dirCache.Clear();
-        emptyState.Visibility = Visibility.Collapsed;
-        tabTree.IsChecked = true;
-        StartJob(0, () =>
-        {
-            var all = new Node { Name = "This PC" };
-            // Per drive, how it was read and why the MFT wasn't: a drive that silently came back empty
-            // (GitHub issue #1, a 6 TB D: on Server 2022) gave nobody anything to go on.
-            var notes = new List<string>();
-            foreach (var d in drives)
-            {
-                if (Scanner.Cancel) break;
-                Node r = null;
-                string how = "MFT";
-                try
-                {
-                    if (Mft.IsNtfsRoot(d)) r = Mft.Scan(d);
-                    else how = "classic";
-                    if (r != null && NothingFound(r) != "") throw new IOException("the MFT read found no files on a drive in use");
-                }
-                catch (Exception ex) { r = null; how = "classic (MFT unavailable: " + ex.Message + ")"; }
-                if (r == null)
-                {
-                    Scanner.Total = 0;
-                    r = new Node { Name = d };
-                    Scanner.Scan(r, d);
-                }
-                notes.Add(d.TrimEnd('\\') + " " + how + NothingFound(r));
-                r.Parent = all;
-                all.Dirs.Add(r);
-                all.Size += r.Size;
-                all.Files += r.Files;
-            }
-            all.Dirs.Sort((a, b) => b.Size.CompareTo(a.Size));
-            Stats.Trim();
-            Window.Dispatcher.BeginInvoke(new Action(() => ScanDone(all, drives.Count + " drives: " + string.Join("; ", notes))));
-        });
-    }
-
     // --- automatic history ---
 
     void ComparePrevious()
@@ -1409,8 +1369,10 @@ class MainUI
     void SetBusy(bool b)
     {
         busy = b;
+        if (!b) liveResults.Stop();
         scanBtn.Content = b ? "Stop" : "Scan";
         exportBtn.IsEnabled = !b;
+        Find<Button>("excludeApply").IsEnabled = !b;
         if (b) { sw.Restart(); timer.Start(); }
         else { timer.Stop(); sw.Stop(); progress.Width = 0; }
     }
@@ -1435,55 +1397,6 @@ class MainUI
 
     // ---------- scanning ----------
 
-    void StartOrStop()
-    {
-        if (busy) { Scanner.Cancel = true; return; }
-
-        string path = pathBox.Text.Trim();
-        if (path.Length == 2 && path[1] == ':') path += "\\";
-        if (!Directory.Exists(path)) { Error("Folder not found: " + path); return; }
-
-        Stats.Reset();
-        Scanner.Cancel = false;
-        Scanner.FilesSeen = 0;
-        Scanner.Total = 0;
-        Scanner.DeniedCount = 0;
-        root = null;
-        rows.Clear();
-        findSort.Clear();
-        dups.Clear();
-        cmpSort.Clear();
-        dirCache.Clear();
-        dupSummary.Text = "";
-        emptyState.Visibility = Visibility.Collapsed;
-        SetBusy(true);
-
-        // Big stack: recursion depth follows folder depth, which can be thousands with long paths.
-        new Thread(() =>
-        {
-            Node r = null;
-            string mode;
-            try
-            {
-                if (Mft.IsNtfsRoot(path)) r = Mft.Scan(path);
-                mode = r != null ? "MFT (fast)" : "classic (not an NTFS volume root)";
-                if (r != null && NothingFound(r) != "") throw new IOException("the MFT read found no files on a drive in use");
-            }
-            catch (Exception ex) { r = null; mode = "classic — MFT unavailable: " + ex.Message; }
-            if (r == null)
-            {
-                Stats.Reset();
-                Scanner.FilesSeen = 0;
-                Scanner.Total = 0;
-                r = new Node { Name = path };
-                Scanner.Scan(r, path);
-                Stats.Trim();
-            }
-            mode += NothingFound(r);
-            Window.Dispatcher.BeginInvoke(new Action(() => ScanDone(r, mode)));
-        }, 256 * 1024 * 1024) { IsBackground = true }.Start();
-    }
-
     // A whole drive that comes back with no files while Windows says it holds data was read wrongly,
     // not found empty: say so instead of showing a quiet 0.
     internal static string NothingFound(Node r)
@@ -1499,26 +1412,6 @@ class MainUI
         catch (Exception) { return ""; } // no DriveInfo for this path: nothing to compare against
     }
 
-    void ScanDone(Node r, string mode)
-    {
-        SetBusy(false);
-        root = r;
-        var top = new Row { Node = r };
-        rows.Add(top);
-        Expand(top);
-        Select(top);
-        RefreshLists();
-        RefreshDrives();
-        ownHistoryFile = null;
-        var toStore = r;
-        new Thread(() => { History.Save(toStore); var newest = History.List(toStore.FullPath).FirstOrDefault();
-            Window.Dispatcher.BeginInvoke(new Action(() => { ownHistoryFile = newest; })); }, 64 * 1024 * 1024) { IsBackground = true }.Start();
-        status.Text = string.Format("{0}{1}  •  {2:N0} files  •  {3:0.0}s  •  {4} scan{5}{6}",
-            Scanner.Cancel ? "STOPPED (partial)  •  " : "", Brand.Fmt(r.Size), r.Files, sw.Elapsed.TotalSeconds, mode,
-            Scanner.DeniedCount > 0 ? string.Format("  •  {0:N0} folders not accessible", Scanner.DeniedCount) : "", VolumeInfo(r.FullPath));
-        Find<Button>("elevateBtn").Visibility = !IsAdmin && (Scanner.DeniedCount > 0 || mode.StartsWith("classic")) ? Visibility.Visible : Visibility.Collapsed;
-    }
-
     static string VolumeInfo(string path)
     {
         try
@@ -1527,47 +1420,6 @@ class MainUI
             return string.Format("  •  volume: {0} used of {1}, {2} free", Brand.Fmt(d.TotalSize - d.TotalFreeSpace), Brand.Fmt(d.TotalSize), Brand.Fmt(d.TotalFreeSpace));
         }
         catch (Exception) { return ""; } // UNC paths etc. have no DriveInfo
-    }
-
-    void Rescan(List<Node> nodes)
-    {
-        if (busy || nodes.Count == 0) return;
-        foreach (var n in nodes) { var x = n; Stats.Top.RemoveAll(t => t.Dir == x || IsUnder(t.Dir, x)); }
-        var old = nodes.Select(n => new[] { n.Size, n.Files }).ToList();
-        Scanner.Cancel = false;
-        Scanner.FilesSeen = 0;
-        Scanner.Total = 0;
-        Scanner.DeniedCount = 0;
-        SetBusy(true);
-        new Thread(() =>
-        {
-            Scanner.CollectExt = false;
-            foreach (var n in nodes)
-            {
-                n.Dirs = new List<Node>();
-                n.Size = n.Files = 0;
-                n.Denied = false;
-                Scanner.Scan(n, n.FullPath);
-            }
-            Scanner.CollectExt = true;
-            Window.Dispatcher.BeginInvoke(new Action(() =>
-            {
-                for (int i = 0; i < nodes.Count; i++)
-                {
-                    var n = nodes[i];
-                    long dSize = n.Size - old[i][0], dFiles = n.Files - old[i][1];
-                    for (var a = n.Parent; a != null; a = a.Parent) { a.Size += dSize; a.Files += dFiles; }
-                    if (n.Parent != null) n.Parent.Dirs.Sort((a, b) => b.Size.CompareTo(a.Size));
-                    var row = RowOf(n);
-                    if (row != null && row.IsExpanded) { Collapse(row); Expand(row); }
-                }
-                SetBusy(false);
-                Stats.Trim();
-                RefreshViews();
-                status.Text = string.Format("Rescanned in {0:0.0}s: {1}{2}", sw.Elapsed.TotalSeconds,
-                    string.Join(", ", nodes.Select(n => n.FullPath + " (" + Brand.Fmt(n.Size) + ")")), VolumeInfo(nodes[0].FullPath));
-            }));
-        }, 256 * 1024 * 1024) { IsBackground = true }.Start();
     }
 
     // ---------- tree ----------
@@ -1591,33 +1443,6 @@ class MainUI
     void Toggle(Row r) { if (r.IsExpanded) Collapse(r); else Expand(r); }
 
     // Children are built on expand; files aren't kept in memory, they're re-listed per folder on demand.
-    void Expand(Row r)
-    {
-        if (busy || !r.CanExpand || r.IsExpanded) return;
-        var n = r.Node;
-        var items = n.Dirs.Select(c => new Row { Node = c, Level = r.Level + 1 }).ToList();
-
-        var files = new List<FileEntry>();
-        Scanner.Enum(n.FullPath, (name, attr, size, modified) => { if ((attr & Scanner.DIR) == 0) files.Add(new FileEntry { Dir = n, Name = name, Size = size, Modified = modified }); });
-        files.Sort((a, b) => b.Size.CompareTo(a.Size));
-        items.AddRange(files.Take(MaxFilesShown).Select(f => new Row { File = f, Level = r.Level + 1 }));
-        items.Sort((a, b) => (b.Node != null ? b.Node.Size : b.File.Size).CompareTo(a.Node != null ? a.Node.Size : a.File.Size));
-        if (files.Count > MaxFilesShown)
-            items.Add(new Row { Level = r.Level + 1, File = new FileEntry { Dir = n, Summary = true, Size = files.Skip(MaxFilesShown).Sum(f => f.Size),
-                Name = string.Format("… {0:N0} more smaller files", files.Count - MaxFilesShown) } });
-
-        int at = rows.IndexOf(r) + 1;
-        foreach (var it in items) rows.Insert(at++, it);
-        r.IsExpanded = true;
-    }
-
-    void Collapse(Row r)
-    {
-        int i = rows.IndexOf(r);
-        while (i + 1 < rows.Count && rows[i + 1].Level > r.Level) rows.RemoveAt(i + 1);
-        r.IsExpanded = false;
-    }
-
     void Select(Row r)
     {
         treeList.SelectedItem = r;
@@ -1670,18 +1495,18 @@ class MainUI
         bool cats = byCat.IsChecked == true;
         extSort.Label("name", cats ? "CATEGORY" : "EXTENSION");
         var groups = cats
-            ? Categories.Group(Stats.Ext)
-            : Stats.Ext.Where(kv => kv.Value[1] > 0).OrderByDescending(kv => kv.Value[0]).ToList();
+            ? Categories.Group(scanSession != null ? displayExtensions : Stats.Ext)
+            : (scanSession != null ? displayExtensions : Stats.Ext).Where(kv => kv.Value[1] > 0).OrderByDescending(kv => kv.Value[0]).ToList();
         extSort.Set(groups.Select(kv => new ExtRow
         {
             Ext = kv.Key, SizeValue = kv.Value[0], CountValue = kv.Value[1], AvgValue = kv.Value[0] / Math.Max(1, kv.Value[1]),
             SizeText = Brand.Fmt(kv.Value[0]), PctText = Brand.Pct(kv.Value[0], total),
             CountText = kv.Value[1].ToString("N0"), AvgText = Brand.Fmt(kv.Value[0] / Math.Max(1, kv.Value[1]))
-        }));
-        topSort.Set(Stats.Top.Select(f => new TopRow
+        }), scanSession != null);
+        topSort.Set((scanSession != null ? displayLargest : Stats.Top).Select(f => new TopRow
         {
             File = f, SizeValue = f.Size, Name = f.Name, SizeText = Brand.Fmt(f.Size), PctText = Brand.Pct(f.Size, total), Folder = f.Dir.FullPath
-        }));
+        }), scanSession != null);
     }
 
     void RefreshViews()
@@ -1848,7 +1673,12 @@ class MainUI
         foreach (var t in changed)
         {
             if (PathOf(t) == null) continue; // e.g. the "N more smaller files" row
-            if (!Scanner.Exists(PathOf(t))) Removed(t);
+            if (!Scanner.Exists(PathOf(t)))
+            {
+                var parent = t is Node ? ((Node)t).Parent : ((FileEntry)t).Dir;
+                Removed(t);
+                if (parent != null) rescan.Add(parent);
+            }
             else if (t is Node) rescan.Add((Node)t);
         }
         var d = touchedDir == null ? null : FindNodeByPath(touchedDir);
@@ -1885,6 +1715,12 @@ class MainUI
 
         if (n != null)
         {
+            foreach (var removed in displayNodes.Values.Where(x => x == n || IsUnder(x, n)).ToList())
+            {
+                foreach (var kv in removed.DirectExt) Stats.AddExt(kv.Key, -kv.Value[0], -kv.Value[1]);
+                displayNodes.Remove(removed.FullPath);
+                directoryRows.Remove(removed);
+            }
             var row = RowOf(n);
             if (row != null) { Collapse(row); rows.Remove(row); }
             Stats.Top.RemoveAll(t => t.Dir == n || IsUnder(t.Dir, n));
@@ -1896,6 +1732,8 @@ class MainUI
             if (row != null) rows.Remove(row);
             Stats.Top.RemoveAll(t => t.Dir == f.Dir && t.Name == f.Name);
             Stats.AddExt(Stats.ExtOf(f.Name), -f.Size, -1);
+            long[] direct;
+            if (dir.DirectExt.TryGetValue(Stats.ExtOf(f.Name), out direct)) { direct[0] -= f.Size; direct[1]--; }
         }
         for (var a = dir; a != null; a = a.Parent) { a.Size -= size; a.Files -= files; }
         DropRows(n, f);
@@ -1945,13 +1783,13 @@ class MainUI
     void ExportView()
     {
         var rowsOut = new List<string>();
-        string name = "spacescan-view.csv";
+        string name = "diskweft-view.csv";
         if (viewExt.Visibility == Visibility.Visible)
         {
             rowsOut.Add("Extension;Size;Size (bytes);Files");
             foreach (var kv in Stats.Ext.Where(kv => kv.Value[1] > 0).OrderByDescending(kv => kv.Value[0]))
                 rowsOut.Add(string.Join(";", Csv(kv.Key), Csv(Brand.Fmt(kv.Value[0])), kv.Value[0].ToString(), kv.Value[1].ToString()));
-            name = "spacescan-filetypes.csv";
+            name = "diskweft-filetypes.csv";
         }
         else if (viewTop.Visibility == Visibility.Visible || viewSearch.Visibility == Visibility.Visible)
         {
@@ -1960,7 +1798,7 @@ class MainUI
             rowsOut.Add("Name;Size;Size (bytes);Modified;Folder");
             foreach (var f in files)
                 rowsOut.Add(string.Join(";", Csv(f.Name), Csv(Brand.Fmt(f.Size)), f.Size.ToString(), Csv(ModifiedText(f)), Csv(f.Dir.FullPath)));
-            name = search ? "spacescan-search.csv" : "spacescan-largest.csv";
+            name = search ? "diskweft-search.csv" : "diskweft-largest.csv";
         }
         else if (viewDup.Visibility == Visibility.Visible)
         {
@@ -1971,13 +1809,13 @@ class MainUI
                 if (d.File == null) { group++; continue; }
                 rowsOut.Add(string.Join(";", group.ToString(), Csv(d.File.Name), Csv(Brand.Fmt(d.File.Size)), d.File.Size.ToString(), Csv(d.File.Dir.FullPath)));
             }
-            name = "spacescan-duplicates.csv";
+            name = "diskweft-duplicates.csv";
         }
         else if (viewCmp.Visibility == Visibility.Visible)
         {
             rowsOut.Add("Folder;Before;Now;Change");
             foreach (var c in cmpSort.Items) rowsOut.Add(string.Join(";", Csv(c.Path), Csv(c.BeforeText), Csv(c.AfterText), Csv(c.DeltaText)));
-            name = "spacescan-changes.csv";
+            name = "diskweft-changes.csv";
         }
         else { Export(); return; } // folder view: the full tree export
         if (rowsOut.Count < 2) { Error("This view is empty."); return; }
@@ -1993,7 +1831,7 @@ class MainUI
 
     void ExportHtml()
     {
-        string file = Ask("HTML report (*.html)|*.html", "spacescan-report.html");
+        string file = Ask("HTML report (*.html)|*.html", "diskweft-report.html");
         if (file != null) ExportHtmlTo(file, true);
     }
 
@@ -2011,7 +1849,7 @@ class MainUI
     void Export()
     {
         if (root == null || busy) return;
-        var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "CSV (*.csv)|*.csv", FileName = "spacescan.csv" };
+        var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "CSV (*.csv)|*.csv", FileName = "diskweft.csv" };
         if (dlg.ShowDialog(Window) != true) return;
         try
         {
@@ -2025,18 +1863,18 @@ class MainUI
 
     static void ShowCrash(object ex)
     {
-        string log = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SpaceScan-crash.log");
+        string log = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Diskweft-crash.log");
         try { File.AppendAllText(log, DateTime.Now + "\r\n" + ex + "\r\n\r\n"); } catch { }
-        MessageBox.Show("SpaceScan hit an error (saved to " + log + "):\r\n\r\n" + ex, "SpaceScan", MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show("Diskweft hit an error (saved to " + log + "):\r\n\r\n" + ex, "Diskweft", MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
     [STAThread]
     static int Main(string[] args)
     {
-        // A bare path (Explorer's or File Labs' "Scan with SpaceScan") opens the window on it;
+        // A bare path (Explorer's or File Labs' "Scan with Diskweft") opens the window on it;
         // anything with options runs headless and writes files.
         // Before either reads a setting or the history: the data folder moves in with the other studio apps, once.
-        Ecosystem.Data = Ecosystem.MoveData(Path.Combine(Ecosystem.AppData, "SpaceScan"), Ecosystem.Data);
+        // Independent profile; S5 owns any explicitly requested upstream-data migration.
         if (args.Any(a => a.StartsWith("-"))) return Cli.Run(args);
         if (args.Length > 0) startPath = args[0];
         AppDomain.CurrentDomain.UnhandledException += (s, e) => ShowCrash(e.ExceptionObject);

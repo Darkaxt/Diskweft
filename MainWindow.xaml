@@ -1,6 +1,6 @@
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="SpaceScan" Width="1280" Height="820" MinWidth="960" MinHeight="560" WindowStartupLocation="CenterScreen"
+        Title="Diskweft" Width="1280" Height="820" MinWidth="960" MinHeight="560" WindowStartupLocation="CenterScreen"
         Background="#0a0d13" Foreground="#e8eef6" FontSize="13.5" UseLayoutRounding="True"
         FontFamily="IBM Plex Sans, Segoe UI Variable Text, Segoe UI">
   <WindowChrome.WindowChrome>
@@ -473,7 +473,7 @@
           <Ellipse Width="9" Height="9" Fill="{StaticResource Accent}" VerticalAlignment="Center">
             <Ellipse.Effect><DropShadowEffect Color="#4c8dff" BlurRadius="14" ShadowDepth="0" Opacity="0.9"/></Ellipse.Effect>
           </Ellipse>
-          <TextBlock Text="SpaceScan" FontFamily="{StaticResource Display}" FontSize="20" FontWeight="SemiBold" Margin="10,0,0,2" VerticalAlignment="Center"/>
+          <TextBlock Text="Diskweft" FontFamily="{StaticResource Display}" FontSize="20" FontWeight="SemiBold" Margin="10,0,0,2" VerticalAlignment="Center"/>
         </StackPanel>
         <Button x:Name="scanBtn" DockPanel.Dock="Right" Style="{StaticResource Primary}" Content="Scan" Margin="10,0,0,0" WindowChrome.IsHitTestVisibleInChrome="True"/>
         <Button x:Name="browseBtn" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Browse…" WindowChrome.IsHitTestVisibleInChrome="True"/>

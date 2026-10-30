@@ -5,11 +5,12 @@ A Windows disk-usage explorer forked from
 scan results and Windows 11 appearance. The name complements
 [Pathweft](https://github.com/Darkaxt/Pathweft), a separate file-manager project.
 
-**Development status:** S0 COMPLETE: specification, fork setup and verified
-upstream baseline. S1-S4 are NOT STARTED. Live folder results,
-independent application identity and Windows theming are not implemented yet.
-The inherited executable still identifies as SpaceScan; do not install or use it
-as a Diskweft release. This repository has no Diskweft product release yet.
+**Development status:** S0 is COMPLETE. S1's independent identity and classic live
+scanning are implemented and verified; source publication is being finalized.
+S2-S5 are NOT STARTED. Progressive MFT results and Windows theming are not yet
+implemented. The internal build is `0.0.1-stage1-development`; there is no
+Diskweft product release yet. S4 owns final delivery; S5 owns the planned system
+replacement of installed SpaceScan after that verified release.
 
 - [Authoritative specification](docs/SPECIFICATION.md)
 - [Staged plan and current reconciliation](docs/IMPLEMENTATION-PLAN.md)
@@ -21,10 +22,18 @@ honest partial-result states, and restrained Windows light/dark themes with acce
 support. Existing search, duplicate detection, history, reports and file actions
 remain compatibility requirements.
 
+Classic scans now publish live folder totals/statistics, allow navigation while
+running and preserve partial/cancelled provenance. See the
+[S1 verification and native rendering](docs/verification/S1-CLASSIC-LIVE.md).
+Build with `scripts/Build-Development.ps1`; current development output is isolated
+from SpaceScan. Do not use the inherited instructions below as a fork release
+procedure.
+
 The source baseline is SpaceScan 1.4.1, commit
 [`313271a`](https://github.com/limburatorul/spacescan/commit/313271a0bb34e63c8182c49e9c71caabbd782a4a).
-It uses WPF and .NET Framework. The existing `build.cmd` compiles the upstream
-baseline; the inherited installer must be isolated before it can ship the fork.
+It uses WPF and .NET Framework. `build.cmd` now builds the independent Diskweft
+development executable; installer packaging and installation acceptance belong
+to S4.
 
 MIT licensed. Preserve the original Protagonist Labs notice in [LICENSE](LICENSE).
 

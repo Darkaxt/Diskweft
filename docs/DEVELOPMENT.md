@@ -3,6 +3,38 @@
 Read [SPECIFICATION.md](SPECIFICATION.md) and
 [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md) first.
 
+## Current development and S1 checks
+
+The fork now builds `Diskweft.exe` with independent identity. Use
+`scripts/Build-Development.ps1`; it reuses the installed .NET Framework compiler
+and embeds the XAML, notes and original Diskweft icon. Default output is ignored
+`.local/development/`. `build.cmd` delegates to that script. `build.ps1` delegates
+to the same compiler path and the independent installer configuration; final
+packaging/installation acceptance belongs to S4.
+
+For S1 verification use Windows PowerShell 5.1 and:
+
+```powershell
+powershell.exe -NoProfile -File scripts/Invoke-Stage1Checks.ps1 -ScratchRoot E:/Temp/Diskweft-s1-<task> -BuildRoot D:/Temp/Diskweft-s1-build -NetworkFixture <explicit-read-only-UNC-fixture>
+powershell.exe -NoProfile -File tests/Verify-NormalBuild.ps1 -ScratchRoot E:/Temp/Diskweft-s1-<task> -BuildRoot D:/Temp/Diskweft-s1-build
+```
+
+Register those exact roots with transactional cleanup before generation. Native
+build output uses D: for active build I/O; generated fixture/screenshot scratch
+uses E:. Inspect the final JSON and actual native captures, retain only current
+required evidence/development output, then clean both scratch roots immediately
+after their consumers exit. No test creates a service, schedule or debug server.
+
+The test variant uses `DISKWEFT_TEST` for event barriers and native action/state
+diagnostics. Those members are compiled out of the normal binary and checked
+absent by normal-build verification. `DISKWEFT_TEST_ROOT` isolates settings/card
+output and suppresses registry, auto-update and What's-new side effects during
+trials. Do not mistake a test override or hidden native rendering for real MFT
+privileges, OS theme notifications, physical focus or installed-package evidence.
+
+See [S1 verification](verification/S1-CLASSIC-LIVE.md). S2-S5 remain unstarted;
+the only retained runnable output is a development build, not a product release.
+
 ## Source and runtime
 
 - Canonical checkout: `D:\Projects\Diskweft`.
@@ -15,7 +47,11 @@ Read [SPECIFICATION.md](SPECIFICATION.md) and
 - Run scanner baseline reflection checks with Windows PowerShell 5.1, matching
   the .NET Framework assembly. Loading scanner types does not invoke GUI Main.
 
-## S0 procedure
+## Historical S0 baseline procedure
+
+S0 is pinned history. Its unchanged-source build procedure applies to the pinned
+upstream baseline, not the current fork. Keep the retained baseline executable;
+do not rerun its setup helper against S1-modified production sources.
 
 1. Confirm upstream production/build files are unchanged and inspect `build.cmd`.
 2. Create an exact task-owned scratch folder under E:; set process-local TEMP/TMP
@@ -59,10 +95,11 @@ are cleaned through the installed helper. Baseline binary/hash
 retention has an active S1-S4 comparison purpose; temporary fixtures do not.
 No new D: temporary exception is required for S0's small E: fixture.
 
-Do not launch the inherited application against the user's profile: it still
+The S0 inherited application must not launch against the user's profile: it still
 publishes SpaceScan's ecosystem card, registry identity and update endpoints.
-Do not run the inherited installer, which shares SpaceScan's AppId and old-data
-migration. S1 must replace these identities before ordinary runtime trials.
+Do not run its inherited installer, which shares SpaceScan's AppId and old-data
+migration. S1 replaced those source identities before isolated runtime trials;
+actual installer delivery/testing remains S4 and host replacement S5.
 
 Real MFT reads and administrator installers use the installed administrator
 broker with genuine per-command consent. No administrator action is needed for

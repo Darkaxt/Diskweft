@@ -19,6 +19,9 @@ class Node
     public List<Node> Dirs = new List<Node>();
     public long Size, Files;
     public bool Denied;
+    public DirectoryState State = DirectoryState.Complete;
+    public string Outcome = "complete";
+    public Dictionary<string, long[]> DirectExt = new Dictionary<string, long[]>();
 
     public bool IsAbsolute { get { return Name.Length > 1 && (Name[1] == ':' || Name.StartsWith("\\\\")); } }
     public string FullPath { get { return Parent == null || IsAbsolute ? Name : Scanner.Join(Parent.FullPath, Name); } }
@@ -173,7 +176,7 @@ static class Scanner
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     static extern IntPtr FindFirstFileExW(string name, int infoLevel, out WIN32_FIND_DATAW data, int searchOp, IntPtr filter, int flags);
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     static extern bool FindNextFileW(IntPtr h, out WIN32_FIND_DATAW data);
     [DllImport("kernel32.dll")]
     static extern bool FindClose(IntPtr h);
@@ -208,6 +211,9 @@ static class Scanner
 
     // Enumerates one directory. Returns false if it could not be opened (access denied etc).
     public static bool Enum(string path, Action<string, uint, long, long> onEntry)
+    { return EnumWithCancellation(path, onEntry, () => Cancel); }
+
+    public static bool EnumWithCancellation(string path, Action<string, uint, long, long> onEntry, Func<bool> cancelled)
     {
         WIN32_FIND_DATAW d;
         IntPtr h = FindFirstFileExW(LongPath(path).TrimEnd('\\') + @"\*", 1 /*FindExInfoBasic*/, out d, 0, IntPtr.Zero, 2 /*LARGE_FETCH*/);
@@ -216,11 +222,12 @@ static class Scanner
         {
             do
             {
-                if (Cancel) break;
+                if (cancelled()) return true;
                 if (d.cFileName == "." || d.cFileName == "..") continue;
                 onEntry(d.cFileName, d.dwFileAttributes, ((long)d.nFileSizeHigh << 32) | d.nFileSizeLow,
                     ((long)d.ftLastWriteTime.dwHighDateTime << 32) | (uint)d.ftLastWriteTime.dwLowDateTime);
             } while (FindNextFileW(h, out d));
+            if (Marshal.GetLastWin32Error() != 18) return false; // ERROR_NO_MORE_FILES
         }
         finally { FindClose(h); }
         return true;
@@ -229,8 +236,16 @@ static class Scanner
     // Classic walk, used for subfolders, network shares, non-NTFS, or when MFT access is denied.
     // ponytail: single-threaded; parallel per-subtree if network shares turn out slow.
     public static void Scan(Node n, string path)
+    { ScanCore(n, path, null); }
+
+    public static void ScanLive(Node n, string path, ScanSession publication)
+    { ScanCore(n, path, publication); }
+
+    static void ScanCore(Node n, string path, ScanSession publication)
     {
         Current = path;
+        n.State = DirectoryState.Scanning;
+        var children = new List<Node>();
         bool ok = Enum(path, (name, attr, size, modified) =>
         {
             if ((attr & DIR) != 0)
@@ -239,9 +254,8 @@ static class Scanner
                 if (Exclude.Any && Exclude.Match(name, Join(path, name))) return;
                 var c = new Node { Name = name, Parent = n };
                 n.Dirs.Add(c);
-                Scan(c, Join(path, name));
-                n.Size += c.Size;
-                n.Files += c.Files;
+                children.Add(c);
+                if (publication != null) { publication.Discover(c); publication.Checkpoint(n); }
             }
             else
             {
@@ -249,11 +263,29 @@ static class Scanner
                 n.Size += size;
                 n.Files++;
                 FilesSeen++;
+                string ext = Stats.ExtOf(name);
+                long[] direct;
+                if (!n.DirectExt.TryGetValue(ext, out direct)) n.DirectExt[ext] = direct = new long[2];
+                direct[0] += size; direct[1]++;
                 if (CollectExt) Stats.AddExt(Stats.ExtOf(name), size, 1);
                 if (Stats.WantsTop(size)) Stats.AddTop(new FileEntry { Dir = n, Name = name, Size = size, Modified = modified });
+                if (publication != null) publication.FileFound(n, size);
             }
         });
         if (!ok) { n.Denied = true; DeniedCount++; }
+#if DISKWEFT_TEST
+        if (publication != null && ScanSession.Enumerated != null) ScanSession.Enumerated(publication, n);
+#endif
+        if (publication != null) { publication.Changed(n); publication.Publish(false, n); }
+        foreach (var c in children)
+        {
+            if (Cancel) break;
+            ScanCore(c, Join(path, c.Name), publication);
+            if (publication == null) { n.Size += c.Size; n.Files += c.Files; }
+        }
+        n.State = !ok ? DirectoryState.Inaccessible : Cancel ? DirectoryState.Stopped : DirectoryState.Complete;
+        n.Outcome = Cancel ? "stopped" : DeniedCount > 0 ? "incomplete" : "complete";
+        if (publication != null) { publication.Changed(n); publication.Publish(false, n); }
         n.Dirs.Sort((a, b) => b.Size.CompareTo(a.Size));
     }
 }
@@ -589,6 +621,13 @@ class Mft
             if (p == null) continue;
             p.Size += size[i];
             p.Files++;
+            if (query == null) // S1 rescan seed accounting; MFT still publishes only at completion
+            {
+                string extension = extNames[extId[i]];
+                long[] direct;
+                if (!p.DirectExt.TryGetValue(extension, out direct)) p.DirectExt[extension] = direct = new long[2];
+                direct[0] += size[i]; direct[1]++;
+            }
             if (query == null) { extSize[extId[i]] += size[i]; extCount[extId[i]]++; }
         }
         var found = query == null ? Stats.Top : matches;
@@ -707,14 +746,14 @@ static class Snapshot
         using (var gz = new GZipStream(fs, CompressionMode.Compress))
         using (var w = new StreamWriter(gz, new UTF8Encoding(false)))
         {
-            w.WriteLine("spacescan" + Sep + "1" + Sep + root.FullPath + Sep + DateTime.UtcNow.ToString("o"));
+            w.WriteLine("diskweft" + Sep + "2" + Sep + root.FullPath + Sep + DateTime.UtcNow.ToString("o") + Sep + root.Outcome);
             Write(w, root, 0);
         }
     }
 
     static void Write(StreamWriter w, Node n, int depth)
     {
-        w.WriteLine("{0}{1}{2}{1}{3}{1}{4}", depth, Sep, n.Size, n.Files, n.Name.Replace(Sep, ' '));
+        w.WriteLine("{0}{1}{2}{1}{3}{1}{4}{1}{5}", depth, Sep, n.Size, n.Files, n.Name.Replace(Sep, ' '), n.State);
         foreach (var c in n.Dirs) Write(w, c, depth + 1);
     }
 
@@ -725,7 +764,8 @@ static class Snapshot
         using (var r = new StreamReader(gz))
         {
             var head = (r.ReadLine() ?? "").Split(Sep);
-            if (head.Length < 4 || head[0] != "spacescan") throw new IOException("Not a SpaceScan snapshot");
+            bool legacy = head.Length >= 4 && head[0] == "spacescan" && head[1] == "1";
+            if (!legacy && (head.Length < 5 || head[0] != "diskweft" || head[1] != "2")) throw new IOException("Not a supported Diskweft/SpaceScan snapshot");
             rootPath = head[2];
             taken = DateTime.Parse(head[3], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind).ToLocalTime();
             var stack = new Node[512];
@@ -738,6 +778,7 @@ static class Snapshot
                 int depth = int.Parse(f[0], CultureInfo.InvariantCulture);
                 if (depth < 0 || depth >= stack.Length) continue;
                 var n = new Node { Size = long.Parse(f[1], CultureInfo.InvariantCulture), Files = long.Parse(f[2], CultureInfo.InvariantCulture), Name = f[3] };
+                if (!legacy && f.Length > 4) n.State = (DirectoryState)Enum.Parse(typeof(DirectoryState), f[4]);
                 if (depth == 0) root = n;
                 else
                 {
@@ -749,6 +790,7 @@ static class Snapshot
                 stack[depth] = n;
             }
             if (root == null) throw new IOException("Snapshot is empty");
+            root.Outcome = legacy ? "legacy-unknown" : head[4];
             return root;
         }
     }
@@ -766,6 +808,9 @@ static class Comparer
 {
     public static List<Change> Run(Node before, Node after, int max)
     {
+        if ((before != null && before.Outcome != "complete" && before.Outcome != "legacy-unknown")
+            || (after != null && after.Outcome != "complete"))
+            throw new InvalidOperationException("A stopped, failed or incomplete scan cannot be compared as a complete baseline.");
         var list = new List<Change>();
         Walk(before, after, (before ?? after).Name, list, max);
         list.Sort((a, b) => Math.Abs(b.Delta).CompareTo(Math.Abs(a.Delta)));
@@ -872,15 +917,18 @@ static class History
         return safe.ToString().Trim('-');
     }
 
-    public static void Save(Node root)
+    public static string Save(Node root)
     {
+        if (root.Outcome != "complete") return null;
         try
         {
             Directory.CreateDirectory(Dir);
-            Snapshot.Save(root, Path.Combine(Dir, Key(root.FullPath) + "__" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".scan"));
+            string path = Path.Combine(Dir, Key(root.FullPath) + "__" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fffffff") + ".scan");
+            Snapshot.Save(root, path);
             foreach (var old in List(root.FullPath).Skip(Keep)) File.Delete(old);
+            return path;
         }
-        catch (Exception) { } // history is a convenience, never a reason to fail a scan
+        catch (Exception) { return null; } // history is a convenience, never a reason to fail a scan
     }
 
     // Newest first.
@@ -899,7 +947,7 @@ static class History
         DateTime t;
         string stamp = Path.GetFileNameWithoutExtension(file);
         int at = stamp.LastIndexOf("__", StringComparison.Ordinal);
-        return at >= 0 && DateTime.TryParseExact(stamp.Substring(at + 2), "yyyyMMdd-HHmmss", CultureInfo.InvariantCulture, DateTimeStyles.None, out t)
+        return at >= 0 && DateTime.TryParseExact(stamp.Substring(at + 2), new[] { "yyyyMMdd-HHmmss", "yyyyMMdd-HHmmss-fffffff" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out t)
             ? t : File.GetLastWriteTime(file);
     }
 }
@@ -919,7 +967,7 @@ static class Report
         }
 
         var b = new StringBuilder();
-        b.Append("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>SpaceScan report</title><style>")
+        b.Append("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Diskweft report</title><style>")
          .Append(":root{--ground:#0a0d13;--panel:rgba(255,255,255,.038);--edge:rgba(255,255,255,.085);--text:#e8eef6;--dim:#8a97aa;--dimmer:#5d6879;--accent:#4c8dff;--pink:#ff5c8a}")
          .Append("*{box-sizing:border-box}body{margin:0;background:var(--ground);color:var(--text);font:15px/1.6 'Segoe UI',system-ui,sans-serif}")
          .Append(".wrap{width:min(100% - 48px,1100px);margin:0 auto;padding:56px 0 80px}")
@@ -936,7 +984,7 @@ static class Report
          .Append(".barcell{width:180px}.track{background:rgba(255,255,255,.085);border-radius:3px}")
          .Append(".up{color:var(--pink)}.down{color:var(--accent)}")
          .Append("</style></head><body><div class=\"wrap\">");
-        b.AppendFormat("<h1><span class=\"dot\"></span>SpaceScan report</h1><div class=\"sub\">{0} &middot; {1:yyyy-MM-dd HH:mm}</div>",
+        b.AppendFormat("<h1><span class=\"dot\"></span>Diskweft report</h1><div class=\"sub\">{0} &middot; {1:yyyy-MM-dd HH:mm}</div>",
             Esc(root.FullPath), DateTime.Now);
         b.AppendFormat("<div class=\"cards\"><div class=\"card\"><span class=\"eyebrow\">Total size</span><b>{0}</b></div>" +
                        "<div class=\"card\"><span class=\"eyebrow\">Files</span><b>{1:N0}</b></div>" +
@@ -1075,7 +1123,7 @@ static class Cli
     static string Next(string[] args, ref int i) { return ++i < args.Length ? args[i] : null; }
 
     const string Usage =
-        "SpaceScan <folder or drive> [options]\n" +
+        "Diskweft <folder or drive> [options]\n" +
         "  --report <file.html>   write an HTML report\n" +
         "  --csv <file.csv>       write every folder to CSV\n" +
         "  --snapshot <file.scan> save a snapshot for later comparison\n" +

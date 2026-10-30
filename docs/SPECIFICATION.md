@@ -1,6 +1,6 @@
 # Diskweft specification
 
-Version 0.1 - 2026-10-30. Owner: Darkaxt.
+Version 0.3 - 2026-10-30. Owner: Darkaxt.
 
 This is the authoritative specification. The implementation plan cannot weaken
 its behavior, constraints or acceptance criteria. The user's standing engineering
@@ -14,18 +14,26 @@ Use Windows 11 appearance and the user's Explorer screenshot as the primary
 visual reference, including Windows accent colors. Use Huashu as inspiration for
 scan-specific elements where Windows conventions do not supply an answer.
 
-The 2026-10-30 request accepts the preceding feasibility approach, asks for the
-specification and Specification-Gated Implementation, and says to start with
-Stage 0. **The current execution boundary is S0 only.** Establish and verify the
-fork, development baseline and complete plan. S1-S4 remain NOT STARTED. The plan
-does not authorize itself to continue beyond this boundary or publish a product
-release. When later implementation is authorized, the standing final-release
-rule applies after the whole requested product scope passes S1-S3 and S4's gates.
+The initial 2026-10-30 request established the specification and S0. S0 is
+COMPLETE. The subsequent user instruction, "Start stage 1", authorizes S1's
+independent identity and complete classic live-scanning workflow, including its
+integration, verification, commit and source synchronization. **The current
+execution boundary is S1 only.** S2-S5 remain NOT STARTED; no intermediate product
+release is authorized. The standing final-release rule applies in S4 after the
+whole product scope and its prerequisite verification pass.
+
+The user subsequently requested a Stage 5 to replace SpaceScan in the system
+with this fork. This adds the post-release migration requirement MIGRATE-01 and
+authorizes documenting its stage now. It does not start the migration during S1.
+S4 remains the final product release; S5 owns the separately requested system
+replacement after that release has been delivered and verified.
 
 No new framework migration, filesystem indexer, background service, scheduled
 monitor, broad parallel scanner, treemap or unrelated file-manager work is part
-of this specification. Pathweft is reference context; this task does not change
-its repository, installed application or integration settings.
+of this specification. S1 uses Pathweft as reference context and does not change
+its repository or installed settings. S5 may update an actual SpaceScan caller
+route in Pathweft when the migration inventory establishes that consumer; it
+does not authorize unrelated Pathweft development.
 
 ## 2. Sources and design authority
 
@@ -72,6 +80,7 @@ as verified Diskweft behavior.
 | PERF-01 | On a declared representative classic million-file fixture and a large NTFS volume, measure at least three paired baseline/fork runs under comparable cache/load conditions. Median scan-time increase must be <=10%; report peak memory/CPU and publication overhead. No backlog grows with total file count. Missed limits are blockers, not waived by small-fixture success. |
 | VERIFY-01 | Verify real local and accessible slow/network paths, real elevated NTFS access, fallback, controlled final totals, UI responsiveness and restart/cancellation. Compare unchanged controlled fixtures exactly against the retained baseline; do not require two live system-drive scans to match exactly. Mock/reordered-record tests supplement real boundaries. |
 | DELIVER-01 | After S1-S3 and pre-release checks pass, publish one normal Diskweft v0.1.0 release on this fork with a usable installer, portable package, MIT notices, checksums and accurate notes/source commit. Independently retrieve the delivered assets and verify version, hashes, signature status, packaged identity/configuration and representative installed/portable behavior. No intermediate release or upstream SpaceScan installer substitution. |
+| MIGRATE-01 | In S5, inventory the actual installed SpaceScan and its settings/history, shortcuts, registry/shell verbs, ecosystem cards and calling applications (including Pathweft if applicable). Install the verified Diskweft release, copy/convert relevant user data with verified preservation and explicit partial-snapshot provenance, and replace the discovered SpaceScan launch/integration routes. Verify real launches, data/history access, caller routing and rollback before retiring obsolete registrations/install files. Preserve source, original data and a concrete recovery path; do not blindly redirect unrelated applications or delete ambiguous files. Ordinary administrator actions use the supported broker. |
 
 ## 5. Publication and lifecycle design
 
@@ -154,6 +163,12 @@ verified result and publishes/verifies the normal release. Installer signing
 must report actual status; do not fabricate a signing identity or change trust
 configuration. Installation tests preserve side-by-side identities and are
 isolated or explicitly authorized; publishing does not imply production rollout.
+
+S5 is the expressly requested rollout boundary. Its inventory must determine the
+actual installation and consumers at execution time. Do not rely on current
+source identities as proof of installed state. Retain rollback information and
+verify the final installed package and caller routes. S4 product delivery can
+close before S5, but the expanded system-replacement outcome requires S5 as well.
 
 Private reference images and machine diagnostics stay in ignored project-local
 storage; publish sanitized evidence summaries. Retain the baseline executable

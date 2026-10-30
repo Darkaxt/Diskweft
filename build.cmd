@@ -1,8 +1,2 @@
 @echo off
-set FW=%WINDIR%\Microsoft.NET\Framework64\v4.0.30319
-%FW%\csc.exe /nologo /target:winexe /optimize /platform:anycpu /codepage:65001 /win32manifest:"%~dp0app.manifest" /win32icon:"%~dp0SpaceScan.ico" ^
- /lib:%FW%\WPF /r:PresentationFramework.dll /r:PresentationCore.dll /r:WindowsBase.dll /r:System.Xaml.dll ^
- /r:System.Windows.Forms.dll /r:Microsoft.VisualBasic.dll /r:System.Web.Extensions.dll ^
- /resource:"%~dp0MainWindow.xaml",MainWindow.xaml ^
- /resource:"%~dp0whatsnew.txt",whatsnew.txt /resource:"%~dp0WhatsNew\1.4.jpg",WhatsNew.1.4.jpg /resource:"%~dp0WhatsNew\m09.jpg",WhatsNew.m09.jpg /resource:"%~dp0WhatsNew\m10.jpg",WhatsNew.m10.jpg ^
- /out:"%~dp0SpaceScan.exe" "%~dp0SpaceScan.cs" "%~dp0App.cs" "%~dp0WhatsNew.cs"
+powershell.exe -NoProfile -File "%~dp0scripts\Build-Development.ps1" %*

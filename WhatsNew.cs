@@ -81,7 +81,7 @@ class WhatsNew
         this.owner = owner;
         window = new Window
         {
-            Title = "What’s new — SpaceScan", Width = 1240, Height = 720, MinWidth = 700, MinHeight = 420, // room for the list and a 960 x 170 banner
+            Title = "What’s new — Diskweft", Width = 1240, Height = 720, MinWidth = 700, MinHeight = 420, // room for the list and a 960 x 170 banner
             Owner = owner, WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false,
             Background = Brand.Ground, Foreground = Brand.Text, FontFamily = new FontFamily("Segoe UI"), FontSize = 13.5, UseLayoutRounding = true,
         };

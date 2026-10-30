@@ -3,9 +3,9 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative. Maintain stage status
 and requirement reconciliation in `docs/IMPLEMENTATION-PLAN.md`.
 
-- The current user instruction authorizes the specification and S0 only. Finish
-  and publish that setup scope; leave S1-S4 NOT STARTED until instructed to start.
-- S0 is COMPLETE with verified baseline/source publication; no stage is ACTIVE.
+- The user authorized S1 on 2026-10-30. S0 is COMPLETE and S1 alone is ACTIVE;
+  S2-S5 remain NOT STARTED. Finish and publish S1 source/evidence without an
+  intermediate product release.
 - Keep at most one ACTIVE stage. Validate complete specified workflows rather
   than treating individual components or passing tests as delivered features.
 - Preserve upstream history and MIT attribution. `origin` is Darkaxt/Diskweft;
@@ -26,3 +26,5 @@ and requirement reconciliation in `docs/IMPLEMENTATION-PLAN.md`.
 - `.local/` is ignored private evidence and retained baseline assets. Generated
   expendable fixtures use exact task scratch and transactional cleanup.
 - No intermediate product releases. S4 owns the final verified Diskweft release.
+- S5 owns the later requested system replacement of installed SpaceScan, including
+  actual consumer inventory, preserved settings/history, route changes and rollback.

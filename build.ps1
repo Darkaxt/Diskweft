@@ -1,31 +1,16 @@
-<#
-    Builds SpaceScan and wraps it in an installer.
-
-    Output: dist\SpaceScan-<version>-setup.exe
-
-    The version lives in App.cs (AssemblyFileVersion) alone, so a release is bumped in one place.
-#>
 [CmdletBinding()]
-param(
-    [switch]$SkipInstaller
-)
-
+param([switch]$SkipInstaller, [string]$OutputDirectory)
 $ErrorActionPreference = 'Stop'
-$root = $PSScriptRoot
-
-cmd /c "`"$root\build.cmd`""
-if ($LASTEXITCODE -ne 0) { throw "compile failed" }
-
-$version = [Diagnostics.FileVersionInfo]::GetVersionInfo("$root\SpaceScan.exe").FileVersion
-if (-not $version) { throw "no version on SpaceScan.exe" }
-Write-Host "SpaceScan $version" -ForegroundColor Cyan
-Write-Host ("  compiled: {0:N0} KB" -f ((Get-Item "$root\SpaceScan.exe").Length / 1KB)) -ForegroundColor DarkGray
-
+if (-not $OutputDirectory) { $OutputDirectory = Join-Path $PSScriptRoot '.local\development' }
+$buildRoot = [IO.Path]::GetFullPath($OutputDirectory)
+& (Join-Path $PSScriptRoot 'scripts\Build-Development.ps1') -OutputDirectory $buildRoot
+$exe = Join-Path $buildRoot 'Diskweft.exe'
+$version = [Diagnostics.FileVersionInfo]::GetVersionInfo($exe).FileVersion
+if (-not $version) { throw 'No Diskweft file version.' }
 if ($SkipInstaller) { return }
-
-$iscc = "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe"
-if (-not (Test-Path $iscc)) { throw "Inno Setup 6 not found at $iscc" }
-& $iscc /Q "/DAppVersion=$version" "$root\installer\SpaceScan.iss"
-if ($LASTEXITCODE -ne 0) { throw "installer failed" }
-$setup = "$root\dist\SpaceScan-$version-setup.exe"
-Write-Host ("  installer: {0} ({1:N1} MB)" -f $setup, ((Get-Item $setup).Length / 1MB)) -ForegroundColor DarkGray
+$command = Get-Command ISCC.exe -ErrorAction SilentlyContinue
+$candidates = @("$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe", "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe")
+$iscc = if ($command) { $command.Source } else { $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1 }
+if (-not $iscc) { throw 'Inno Setup 6 compiler is unavailable; no installer was built.' }
+& $iscc /Q "/DAppVersion=$version" "/DBuildRoot=$buildRoot" (Join-Path $PSScriptRoot 'installer\Diskweft.iss')
+if ($LASTEXITCODE -ne 0) { throw 'Diskweft installer compilation failed.' }
