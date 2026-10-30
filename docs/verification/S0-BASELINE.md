@@ -15,6 +15,10 @@ baseline. This report does not validate the planned Diskweft product features.
   manifest and license remain unchanged by S0.
 - Setup changes consist of project guidance, specification/plan, development
   procedure, baseline verification helpers and private-output ignore rules.
+- Setup commit `1e493151734f93eda414031074aa590c5f83b023` was pushed to
+  `origin/master`, then independently read back through the GitHub bridge and
+  `git ls-remote`. Both matched the local commit. Its parent is the pinned
+  upstream baseline. The tracked worktree was clean after publication.
 
 ## Executed verification
 
@@ -59,6 +63,12 @@ before generation. Review/inspection covered all 11 members, with no exclusions;
 the separate ticket/apply returned state `applied`, 11 deleted members and 7,500
 logical bytes. No cleanup error or residual was reported. No D: temporary
 build tree or clone was created; the D: checkout is maintained source.
+
+Completed disposable preflight inputs/report were separately cleaned under
+transaction `3de53b9df2bb33f28ed3ec142a4babc3`: all 3 reviewed members removed,
+3,811 logical bytes, state `applied`, no exclusions/errors/residuals. The local
+Inspector had reported no matches for the launcher; this was diagnostic evidence,
+not an execution-permission claim. No policy rejection occurred.
 
 ## Limits and next stage
 

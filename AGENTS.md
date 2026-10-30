@@ -5,6 +5,7 @@ and requirement reconciliation in `docs/IMPLEMENTATION-PLAN.md`.
 
 - The current user instruction authorizes the specification and S0 only. Finish
   and publish that setup scope; leave S1-S4 NOT STARTED until instructed to start.
+- S0 is COMPLETE with verified baseline/source publication; no stage is ACTIVE.
 - Keep at most one ACTIVE stage. Validate complete specified workflows rather
   than treating individual components or passing tests as delivered features.
 - Preserve upstream history and MIT attribution. `origin` is Darkaxt/Diskweft;

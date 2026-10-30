@@ -5,7 +5,8 @@ A Windows disk-usage explorer forked from
 scan results and Windows 11 appearance. The name complements
 [Pathweft](https://github.com/Darkaxt/Pathweft), a separate file-manager project.
 
-**Development status:** specification and S0 baseline setup. Live folder results,
+**Development status:** S0 COMPLETE: specification, fork setup and verified
+upstream baseline. S1-S4 are NOT STARTED. Live folder results,
 independent application identity and Windows theming are not implemented yet.
 The inherited executable still identifies as SpaceScan; do not install or use it
 as a Diskweft release. This repository has no Diskweft product release yet.

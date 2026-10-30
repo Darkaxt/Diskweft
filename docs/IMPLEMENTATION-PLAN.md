@@ -7,7 +7,7 @@ Updated: 2026-10-30. Current authorization: specification and S0 only.
 
 | Stage | Status | Complete specified outcome | Requirement ownership |
 | --- | --- | --- | --- |
-| S0 - Fork, specification and reproducible baseline | ACTIVE | Public named fork, owned checkout, complete requirements/stage map, inspected baseline build/scanner evidence and published setup documents | ENV-01..04 |
+| S0 - Fork, specification and reproducible baseline | COMPLETE | Public named fork, owned checkout, complete requirements/stage map, inspected baseline build/scanner evidence and published setup documents | ENV-01..04 |
 | S1 - Independent identity and classic live scanning | NOT STARTED | Real folder/UNC scan -> consistent live tree/statistics -> navigation -> correct terminal result, with independent Diskweft identities | ID-01; SCAN-01,03..07 for classic; COMPAT-01 for affected classic paths |
 | S2 - Progressive NTFS/MFT scanning | NOT STARTED | Real volume -> progressive resolved folders/statistics -> navigation -> final result; safe fallback and all-drives integration | SCAN-02; SCAN-03..07 for MFT/mixed scans; affected COMPAT-01, VERIFY-01 |
 | S3 - Windows 11 appearance and accents | NOT STARTED | Native light/dark/high-contrast UI, Appearance persistence and live accent/theme changes across completed scan workflows | UI-01..04 |
@@ -23,15 +23,15 @@ may begin under the current S0-only instruction.
 | Criterion | Required evidence | Current result |
 | --- | --- | --- |
 | ENV-01 | GitHub fork visibility, parent and preserved upstream source commit | Fork created; bridge/gh read-back confirms public fork and parent |
-| ENV-02 | Local checkout/remotes/default GitHub target; committed setup and matching remote HEAD | Checkout/remotes/default target confirmed; commit/sync pending |
+| ENV-02 | Local checkout/remotes/default GitHub target; committed setup and matching remote HEAD | PASS: setup commit 1e493151734f93eda414031074aa590c5f83b023 independently read back through GitHub bridge and git ls-remote; tracked worktree clean |
 | ENV-03 | Existing upstream build, actual version/hash, controlled scanner totals/exclusion/stats/pre-cancelled results; no production-code changes | PASS: existing build and controlled checks exited 0; source unchanged; see verification/S0-BASELINE.md |
-| ENV-04 | Complete mapping, design/verification contract, development notes, actual evidence, private reference handling and scratch cleanup | Content/mapping/private-reference checks pass; fixture cleanup applied; setup publication pending |
+| ENV-04 | Complete mapping, design/verification contract, development notes, actual evidence, private reference handling and scratch cleanup | PASS: committed/published documents and helpers read back; all requirements assigned; private reference ignored; fixture/preflight cleanup applied |
 
-S0's internal advancement blocker is ENV-02/04 setup publication and remote
-read-back. Baseline, document reconciliation and fixture cleanup have passed.
-This is implementable within the stage, so it remains ACTIVE. Resolution:
-commit/push the verified setup and independently read back its source delivery.
-Dependent S1 cannot start before these criteria pass and the user starts it.
+S0 reconciliation: ENV-01..04 satisfied and verified. No remaining S0 acceptance
+criteria, blockers or tracked deferrals. Only S0 is COMPLETE; no stage is ACTIVE.
+S1-S4 remain NOT STARTED under the user's explicit current execution boundary.
+The next action, when requested, is to start S1; no product implementation or
+release is claimed by S0. Evidence: [S0 baseline](verification/S0-BASELINE.md).
 
 ## Later-stage acceptance and verification
 
