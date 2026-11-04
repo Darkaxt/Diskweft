@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([Parameter(Mandatory=$true)][string]$PackageRoot,[Parameter(Mandatory=$true)][string]$OutputRoot)
+param([Parameter(Mandatory=$true)][string]$PackageRoot,[Parameter(Mandatory=$true)][string]$OutputRoot,[string]$ExpectedVersion='0.1.1')
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 [IO.Directory]::CreateDirectory($OutputRoot) | Out-Null
@@ -7,7 +7,7 @@ $exe=Join-Path $PackageRoot 'Diskweft.exe'
 if(-not (Test-Path "$exe.config")){throw 'Runtime DPI configuration missing'}
 if(-not (Test-Path "$PackageRoot/LICENSE")){throw 'MIT notice missing'}
 $version=[Diagnostics.FileVersionInfo]::GetVersionInfo($exe)
-if($version.ProductName -ne 'Diskweft' -or $version.FileVersion -ne '0.1.0'){throw 'Packaged identity/version mismatch'}
+if($version.ProductName -ne 'Diskweft' -or $version.FileVersion -ne $ExpectedVersion){throw 'Packaged identity/version mismatch'}
 $env:DISKWEFT_TEST_ROOT=Join-Path $OutputRoot 'profile'
 $env:TEMP=$OutputRoot;$env:TMP=$OutputRoot
 $fixture=Join-Path $OutputRoot 'fixture'

@@ -199,15 +199,18 @@ class WhatsNew
 
     static UIElement Banner(Release r)
     {
-        var picture = new BitmapImage();
         using (var stream = Picture(r))
         {
+            if (stream == null)
+                return new TextBlock { Text = r.Title, Width = 960, FontSize = 24, FontWeight = FontWeights.SemiBold,
+                    Foreground = Brand.Text, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 8) };
+            var picture = new BitmapImage();
             picture.BeginInit();
             picture.CacheOption = BitmapCacheOption.OnLoad;
             picture.StreamSource = stream;
             picture.EndInit();
+            picture.Freeze();
+            return new Image { Source = picture, Width = 960, Height = 170, Stretch = Stretch.UniformToFill };
         }
-        picture.Freeze();
-        return new Image { Source = picture, Width = 960, Height = 170, Stretch = Stretch.UniformToFill };
     }
 }

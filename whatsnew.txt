@@ -1,6 +1,12 @@
 # Diskweft development notes, followed by retained upstream SpaceScan history.
 # "## version | yyyy-MM-dd | title", then the release's lines: "**Heading**", "- point", or a plain paragraph.
 
+## 0.1.1 | 2026-11-04 | Live largest-first ordering and Explorer colors
+- Folder siblings automatically move into largest-first order as measured sizes grow, while retaining selection, expansion and the viewport anchor.
+- Explorer-inspired colors without changing layout: a dark tinted native caption, warm address surface, neutral selection, quieter borders and blue space bars independent of the accent.
+- System accents now use the Windows shell accent palette. High-contrast colors remain controlled by Windows.
+- Release notes render a text heading when a release has no packaged banner image, fixing first launch from an older profile.
+
 ## 0.1.0 | 2026-11-04 | Live disk usage with Windows appearance
 - Folder totals, recursive counts and file statistics update while classic and NTFS/MFT scans run.
 - Expand folders and select results during scanning; stop, restart and rescan without mixing generations.

@@ -1,6 +1,6 @@
 # Diskweft specification
 
-Version 0.4 - 2026-11-04. Owner: Darkaxt.
+Version 0.7 - 2026-11-04. Owner: Darkaxt.
 
 This is the authoritative specification. The implementation plan cannot weaken
 its behavior, constraints or acceptance criteria. The user's standing engineering
@@ -20,8 +20,10 @@ independent identity and complete classic live-scanning workflow, including its
 integration, verification, commit and source synchronization. S1 is COMPLETE.
 The 2026-11-04 instruction, "You may start working on this all the way in",
 authorizes completing S2-S5, including final release and system replacement.
-S0-S3 are COMPLETE; S4 is ACTIVE after renewed user readiness for the administrator
-benchmark request, and S5 remains NOT STARTED. No intermediate product release is
+S0-S3 are COMPLETE. S4 is ACTIVE again for the first-launch release-notes defect
+found during actual S5 installation/profile verification. S5 is BLOCKED/parked
+until the corrected normal maintenance release passes its delivery gate. This
+repairs the same required startup behavior; it adds no product scope. No intermediate product release is
 authorized. The standing final-release rule applies in S4 after the whole
 product scope and its prerequisite verification pass.
 
@@ -29,15 +31,26 @@ The user subsequently requested a Stage 5 to replace SpaceScan in the system
 with this fork. This adds the post-release migration requirement MIGRATE-01 and
 initially authorized documenting its stage. The 2026-11-04 instruction authorizes
 its execution after S4; it does not move migration work into S2.
+On 2026-11-04 the user explicitly requested uninstalling SpaceScan and installing
+Diskweft when ready, then excluded Pathweft integration: "Don't worry about that,
+I will be integrating Diskweft inside Pathweft." Preserve Pathweft's source,
+running applications and caller routes; the user owns that integration.
+The initial product release is v0.1.0; the discovered missing-banner startup defect
+requires corrected maintenance v0.1.1 before system replacement can pass.
 S4 remains the final product release; S5 owns the separately requested system
 replacement after that release has been delivered and verified.
+
+Additional explicit user changes2026-11-04 belong to the current S4 correction:
+restore automatic largest-first order during live scanning; match the newer
+Explorer reference's colors more closely without changing layout/design,
+including its dark/tinted caption, warmer address surface, quiet borders,
+neutral selection and blue capacity bars independent of the warm accent.
 
 No new framework migration, filesystem indexer, background service, scheduled
 monitor, broad parallel scanner, treemap or unrelated file-manager work is part
 of this specification. S1 uses Pathweft as reference context and does not change
-its repository or installed settings. S5 may update an actual SpaceScan caller
-route in Pathweft when the migration inventory establishes that consumer; it
-does not authorize unrelated Pathweft development.
+its repository or installed settings. S5 inventories Pathweft's caller for
+awareness but does not change it; the user explicitly owns that integration.
 
 ## 2. Sources and design authority
 
@@ -73,18 +86,19 @@ as verified Diskweft behavior.
 | SCAN-02 | Whole-volume NTFS/MFT scans also publish useful folder results during record reading. Resolve parents arriving out of order; apply ancestor/path exclusions without retaining excluded totals or double counting. Show pending/unresolved metadata honestly. Phase text alone does not satisfy this requirement. |
 | SCAN-03 | The scanner owns working state; the WPF dispatcher owns displayed collections. Publish consistent, coalesced batches with stable per-scan directory identity. No queue item per file, unbounded pending event history, whole-tree clone every tick, or scan-thread wait for rendering. Progress-only retained state scales with directories/visible data, not all files. |
 | SCAN-04 | Completed, cancelled and failed are distinct terminal states. Drain/reconcile final updates exactly once. Stop/restart, MFT failure/fallback, all-drives scans and partial rescans cannot accept stale updates, reuse a cancelled generation or double-count totals. Never mark a cancelled/failed attempt completed; a successful replacement scan may complete with its actual engine and fallback reason shown. |
-| SCAN-05 | Expand/collapse, selection, keyboard navigation and scroll remain usable during scanning. Preserve row identity and expanded state across updates; no forced scrolling or constant resorting. Disk enumeration/file listing runs off the UI thread. Clearly label files not yet listed; do not allocate every scanned file merely for navigation. |
+| SCAN-05 | Expand/collapse, selection, keyboard navigation and scroll remain usable during scanning. Preserve row identity, expansion, selected files and viewport anchor while automatically sorting sibling folders largest-first at publication cadence. Sort by currently discovered bytes, not invented future totals; unmeasured pending folders follow measured ones. Disk enumeration/listing stays off the UI thread; do not retain every file for navigation. |
 | SCAN-06 | Publish extension/category totals and bounded largest-file results through the same consistent publication boundary. Existing statistics caps remain bounded. Partial file paths waiting for MFT ancestors are visibly pending or withheld until valid, never invented. Percent bars mean share of discovered bytes, not completion percentage. |
 | SCAN-07 | Partial states are visible and accessible: pending/scanning, completed, stopped and inaccessible distinguishable by text/state as well as color. Classic traversal has no fabricated completion percentage; MFT record progress is labelled as that phase rather than overall work. Do not promise monotonic provisional totals when late exclusions require correction. |
 | UI-01 | Windows 11 is the primary appearance target: neutral surfaces, Segoe UI family, compact command bar, normal Windows window/keyboard behavior, restrained separators/selection/focus and readable tabular data. Preserve useful scan views; no marketing layout, oversized hero metrics or decorative cards around each folder. |
 | UI-02 | Default to the Windows app light/dark preference and system accent. Provide System/Light/Dark mode plus system/custom accent selection in Appearance. Persist app overrides and apply them consistently to the shell, scan views, menus, dialogs and settings. Observe Windows changes while open without changing OS settings or restarting a scan. |
 | UI-03 | Honor high contrast, readable focus and contrast independently of accent choice. Use system/window colors in high contrast. Native DWM materials/corners/title-bar behavior are capability-checked; unavailable composition uses coherent solid neutral surfaces. No dependency/framework migration solely to obtain a material effect. |
 | UI-04 | Verify actual WPF rendering at the design-contract sizes/scales, including live scanning, expanded trees, empty/denied/stopped states and Appearance. Record structured UI state and targeted screenshots. HTML inspiration is not native acceptance evidence. |
+| UI-05 | Preserve layout/design while matching the user's2026-11-04 Explorer colors: dark subtly accent-tinted caption with readable text, warm tinted address/command surface, near-black content, quieter neutral dividers and selection. Use the Windows accent palette or app custom accent for focus/primary controls; capacity bars remain Windows blue with gray tracks (red low-space warning retained). High contrast overrides decorative colors. Verify native caption attributes and rendered colors; no OS appearance changes. |
 | COMPAT-01 | Preserve existing folder/drive/all-drives scans, exclusions, search, duplicate detection, history/compare, HTML/CSV/CLI reports and safe file operations. Changes must not enable destructive actions against actively mutating scan results. Diskweft snapshots preserve terminal/partial provenance so cancelled scans are not silently used as complete history baselines. |
 | PERF-01 | On a declared representative classic million-file fixture and a large NTFS volume, measure at least three paired baseline/fork runs under comparable cache/load conditions. Median scan-time increase must be <=10%; report peak memory/CPU and publication overhead. No backlog grows with total file count. Missed limits are blockers, not waived by small-fixture success. |
 | VERIFY-01 | Verify real local and accessible slow/network paths, real elevated NTFS access, fallback, controlled final totals, UI responsiveness and restart/cancellation. Compare unchanged controlled fixtures exactly against the retained baseline; do not require two live system-drive scans to match exactly. Mock/reordered-record tests supplement real boundaries. |
-| DELIVER-01 | After S1-S3 and pre-release checks pass, publish one normal Diskweft v0.1.0 release on this fork with a usable installer, portable package, MIT notices, checksums and accurate notes/source commit. Independently retrieve the delivered assets and verify version, hashes, signature status, packaged identity/configuration and representative installed/portable behavior. No intermediate release or upstream SpaceScan installer substitution. |
-| MIGRATE-01 | In S5, inventory the actual installed SpaceScan and its settings/history, shortcuts, registry/shell verbs, ecosystem cards and calling applications (including Pathweft if applicable). Install the verified Diskweft release, copy/convert relevant user data with verified preservation and explicit partial-snapshot provenance, and replace the discovered SpaceScan launch/integration routes. Verify real launches, data/history access, caller routing and rollback before retiring obsolete registrations/install files. Preserve source, original data and a concrete recovery path; do not blindly redirect unrelated applications or delete ambiguous files. Ordinary administrator actions use the supported broker. |
+| DELIVER-01 | After S1-S3 and pre-release checks pass, publish normal Diskweft v0.1.0 on this fork, followed by required corrected v0.1.1 for the discovered startup defect and explicit user live-sort/color changes before S5 can pass. Include installer, portable ZIP, MIT notices, checksums and accurate notes/source commit. Independently retrieve assets and verify version, hashes, signature status, packaged identity/configuration and representative installed/portable behavior. No intermediate feature-stage release or upstream installer substitution. |
+| MIGRATE-01 | In S5, inventory installed SpaceScan, settings/history, shortcuts, registry/shell verbs, ecosystem cards and callers. Install the verified Diskweft release, preserve/copy relevant data with explicit legacy/partial provenance, verify actual launch, history access and rollback, then uninstall SpaceScan and retire its obsolete owned registrations. Preserve source, original data and a concrete recovery path. Pathweft integration is explicitly excluded by the user's 2026-11-04 instruction; its installed/source caller remains untouched for the user to integrate. Ordinary administrator actions use the supported broker. |
 
 ## 5. Publication and lifecycle design
 
@@ -136,9 +150,9 @@ cancelled file listing or obsolete MFT batch cannot alter the next scan.
   Regular text remains neutral. Text contrast >=4.5:1; interactive/non-text
   indicators >=3:1 where applicable. Preserve contrast for very light/dark custom
   accents and never encode completeness solely by color.
-- Keep scan status/stop discoverable, columns aligned and sizes readable. Stable
-  sibling order during active interaction; explicit user sort or deliberate
-  completion sorting must preserve selection/scroll context.
+- Keep scan status/stop discoverable, columns aligned and sizes readable. Automatic
+  largest-first sibling order follows each coalesced publication while preserving
+  selection, expansion and the viewport anchor. Pending does not mean measured0B.
 - Verify light/dark, multiple accents, high contrast, live setting changes and
   restart persistence on the actual native app. Do not change host appearance
   settings solely for testing when an isolated test override can exercise the

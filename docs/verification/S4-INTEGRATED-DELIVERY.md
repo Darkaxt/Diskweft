@@ -1,10 +1,67 @@
 # S4 integrated verification and delivery
 
-2026-11-04. S0-S3 COMPLETE; S4 ACTIVE; S5 NOT STARTED.
-Pre-release product verification passes. DELIVER-01 still requires verified
-commit/tag, normal publication and independent delivered-asset retrieval.
+2026-11-04. S0-S3 COMPLETE; S4 ACTIVE again; S5 BLOCKED/parked pending corrected
+release0.1.1. Initial0.1.0 publication was independently verified, then actual
+installed-profile startup exposed a missing-banner defect. The user also requested
+live largest-first ordering and closer Explorer colors without layout changes.
 
-## Current acceptance evidence
+## Maintenance0.1.1 current qualification
+
+- Both regressions reproduced before correction: null November banner failed
+  BitmapImage initialization; a growing larger sibling stayed below the smaller
+  one. Native corrected notes and real-filesystem ordering workflows pass.
+- Automatic sibling sort uses discovered bytes, measured folders before pending,
+  stable row objects and block ordering. Real2,101-file workflow verifies selected
+  file identity, expansion, viewport anchor, terminal totals and worker exit.
+- Windows UISettings supplies the shell accent palette. Actual host defaults:
+  primary#DEAC9D, active caption#210806, command surface#291D1C,
+  field#37302F, neutral selection#303030, usage#239FD0. Light/dark/custom accents
+  and high contrast pass; decorative blue usage bars do not follow custom accents.
+- DWM caption/text setters return success on the host. Caption/text colors are
+  documented Set attributes; a Get diagnostic returned E_INVALIDARG and is not
+  counted as readback. A physical-frame capture through the installed screenshot
+  helper verifies the actual dark caption with readable text; client WPF captures
+  verify the palette/layout. No OS appearance settings changed.
+- Owned4 GiB/no-network guest6d2c71af-8721-4315-8a62-acbe6915e8b2 passed
+  release-notes, live-sort, existing classic navigation/scroll/restart/history,
+  full native palette/layout/DPI/notification/persistence and normal installed/
+  portable CLI/WPF plus uninstall/SpaceScan preservation. Final command
+  s4-palette-boundary-corrected-and-packages exit0/isError=false. Aggregate workflow
+  exit1 includes the earlier unsupported headless-DWM test assertion; exact guest
+  exit was verified and its lease released. No host fallback was used.
+- Current real raw E: native workflow:1,193,772 files /872,716,033,898 bytes;
+  useful producer metadata115.612 ms, WPF533.3272 ms from start /417.7152 ms after
+  publication; dispatcher p95 39.589 ms, max235.8069 ms /98 samples. Navigation,
+  native sorting, terminal reconciliation and zero workers passed. Request
+  32c380c1df794ffc8f29990602af841c elevated=true/exit0 also passed real NTFS
+  cancel/restart/fallback/mixed-root regression (partial display463.6553 ms).
+- Scanner/producer code is unchanged by0.1.1; the paired scanner timings below
+  remain applicable. The changed UI has fresh million-file evidence above.
+- Normal0.1.1 source-hook/identity/CLI parity check passes. Candidate hashes:
+  exe9903e7e15ec2f8a2931582187f69bf2903b7c891327057e6a2e0b60b6f6f1046,
+  setup c149acb540523b24656226f7f28c5d88492fe0c6915b5121e300839776b8880e,
+  portable4cf754a4f34879ad18a51c137ef505294ca448b848a988b77f3774f5b1bf105a.
+  MIT/config included, Authenticode NotSigned. Current output dist/0.1.1.
+
+Remaining internal S4 blocker: publish/retrieve/verify this normal maintenance
+release against the verified source commit. S5 resumes only after delivery;
+original SpaceScan remains installed and its data/recovery intact. Pathweft
+integration is explicitly left to the user. No tracked deferrals.
+
+Closure assessment for the correction: sorting reuses row identities and moves
+only the visible projection; scan ownership and producer data are unchanged.
+The palette extends the existing owner and capability-checked DWM path. Missing
+release artwork has a deterministic text presentation rather than an invalid
+image initialization. No material consolidation requirement remains.
+
+Maintenance scratch cleanup inspected all6,645 signed members under transaction
+3b6761e6128271a91d1b5d06cf875929; manifest
+58230e9a3d2e014188c8368e4bcf5fc99fe6c844371d7937810f678aebec7b29.
+After retained evidence and verified consumer exit, apply removed6,645 members /
+11,747,633 logical bytes with no errors/exclusions. Both exact D:/E: roots are
+absent. Versioned release packages and required private working evidence remain.
+
+## Initial0.1.0 acceptance and retained scanner evidence
 
 Baseline: unchanged SpaceScan 1.4.1, source `313271a`, binary SHA-256
 `1eacba02c172a76d21e7b0bed77da51783d04cfe1b0926dd2d5e51ef7e650def`.
@@ -86,10 +143,16 @@ request `s4-current-native-and-packages`, native exit0/isError=false.
 Workflow ended with exit0, sandbox_exit_verified=true and lease released.
 Normal installed/portable executable and config hashes match the table exactly.
 
-DELIVER-01 is an internal advancement blocker until verified source is committed,
-normal v0.1.0 published with installer/portable/checksums, then independently
-retrieved and checked against tag/source/version/hash/signature/configuration
-and usable behavior. S5 remains NOT STARTED behind that delivery.
+DELIVER-01 PASS. GitHub bridge read back release434073813: draft=false,
+prerelease=false, published2026-11-04T15:01:26Z; target and remote tag match the
+source commit above. All three assets exist with matching GitHub SHA-256 digests.
+gh independently retrieved them into registered E: scratch. Both hashes match
+the delivered checksum manifest and the table. Downloaded portable version,
+config, MIT, absent test hooks, CLI and actual native WPF scan passed (exit0).
+Downloaded installer is NotSigned and byte-identical to the guest-tested setup.
+The first release request used an abbreviated commit and was rejected422 before
+creation; the corrected full-SHA request created this one verified normal release.
+S5 owns actual system installation/migration, not an additional product release.
 
 ## Closure assessment and cleanup
 

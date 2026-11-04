@@ -20,7 +20,7 @@ sealed class AppearancePreferences
 sealed class SystemAppearance
 {
     public bool Dark, HighContrast;
-    public Color Accent;
+    public Color Accent, LightAccent, DarkAccent;
 }
 
 // Application-owned palette and window lifetime only. No OS settings are written.
@@ -41,6 +41,9 @@ static class Appearance
     public static long NotificationRevision { get; private set; }
     public static int NativeDarkResult { get; private set; }
     public static int NativeCornerResult { get; private set; }
+    public static int NativeCaptionResult { get; private set; }
+    public static int NativeCaptionTextResult { get; private set; }
+    public static string SystemAccentSource { get; private set; }
     public static bool Composition { get; private set; }
     public static event Action Changed;
 #if DISKWEFT_TEST
@@ -116,7 +119,31 @@ static class Appearance
         }
         catch (DllNotFoundException) { }
         catch (EntryPointNotFoundException) { }
-        return new SystemAppearance {Dark=dark,HighContrast=SystemParameters.HighContrast,Accent=accent};
+        Color light=accent,deep=accent;
+        SystemAccentSource="DWM colorization fallback";
+        // UISettings exposes the actual Windows shell accent palette. DWM's
+        // colorization color is a composition input, not the control accent.
+        try
+        {
+            var type=Type.GetType("Windows.UI.ViewManagement.UISettings, Windows.UI.ViewManagement, ContentType=WindowsRuntime",true);
+            var settings=Activator.CreateInstance(type);
+            var method=type.GetMethod("GetColorValue");
+            var enumType=method.GetParameters()[0].ParameterType;
+            accent=ShellColor(method.Invoke(settings,new[]{Enum.Parse(enumType,"Accent")}));
+            light=ShellColor(method.Invoke(settings,new[]{Enum.Parse(enumType,"AccentLight2")}));
+            deep=ShellColor(method.Invoke(settings,new[]{Enum.Parse(enumType,"AccentDark3")}));
+            SystemAccentSource="Windows UISettings accent palette";
+        }
+        catch (TypeLoadException) { }
+        catch (NotSupportedException) { }
+        catch (System.Reflection.TargetInvocationException) { }
+        catch (COMException) { }
+        return new SystemAppearance {Dark=dark,HighContrast=SystemParameters.HighContrast,Accent=accent,LightAccent=light,DarkAccent=deep};
+    }
+    static Color ShellColor(object value)
+    {
+        var type=value.GetType();
+        return Color.FromRgb((byte)type.GetProperty("R").GetValue(value,null),(byte)type.GetProperty("G").GetValue(value,null),(byte)type.GetProperty("B").GetValue(value,null));
     }
     static Color Hex(string value) { return (Color)ColorConverter.ConvertFromString(value); }
     static double Channel(byte value) { double v=value/255.0; return v<=0.04045?v/12.92:Math.Pow((v+0.055)/1.055,2.4); }
@@ -138,14 +165,23 @@ static class Appearance
         var system=ReadSystem(); HighContrast=system.HighContrast;
         Dark=Preferences.Mode=="Dark" || (Preferences.Mode=="System" && system.Dark);
         Color custom; TryAccent(Preferences.CustomAccent,out custom);
-        Color ground=Dark?Hex("#202020"):Hex("#F3F3F3"), panel=Dark?Hex("#191919"):Colors.White;
+        Color ground=Dark?Hex("#191919"):Hex("#F3F3F3"), panel=Dark?Hex("#191919"):Colors.White;
         Color text=Dark?Hex("#F2F2F2"):Hex("#1B1B1B"), dim=Dark?Hex("#B8B8B8"):Hex("#595959");
-        Color accent=ReadableAccent(Preferences.AccentMode=="Custom"?custom:system.Accent,panel);
+        bool customAccent=Preferences.AccentMode=="Custom";
+        Color raw=customAccent?custom:system.Accent;
+        Color deep=customAccent || system.DarkAccent.A==0?Mix(Colors.Black,raw,0.4):system.DarkAccent;
+        Color preferred=customAccent?custom:Dark && system.LightAccent.A!=0?system.LightAccent:system.Accent;
+        Color accent=ReadableAccent(preferred,panel);
         var colors=new Dictionary<string,Color> {
             {"Ground",ground},{"Text",text},{"Dim",dim},{"Dimmer",dim},{"Panel",panel},
-            {"Panel2",Dark?Hex("#303030"):Hex("#EAEAEA")},{"FieldBackground",Dark?Hex("#2C2C2C"):Colors.White},
-            {"Edge",Dark?Hex("#414141"):Hex("#D1D1D1")},{"EdgeBright",Dark?Hex("#808080"):Hex("#808080")},
-            {"Accent",accent},{"Focus",accent},{"AccentSoft",Mix(panel,accent,0.14)},
+            {"Panel2",Dark?Hex("#303030"):Hex("#EAEAEA")},{"FieldBackground",Dark?Mix(Hex("#2C2C2C"),raw,0.08):Colors.White},
+            {"CommandSurface",Dark?Mix(Hex("#202020"),deep,0.22):Mix(ground,raw,0.025)},
+            {"Caption",Dark?Mix(Colors.Black,deep,0.45):Mix(Hex("#F3F3F3"),raw,0.04)},
+            {"CaptionInactive",Dark?Hex("#202020"):Hex("#F3F3F3")},
+            {"Edge",Dark?Hex("#383838"):Hex("#D1D1D1")},{"EdgeBright",Dark?Hex("#454545"):Hex("#B8B8B8")},
+            {"Usage",Dark?Hex("#239FD0"):Hex("#0078D4")},{"UsageTrack",Dark?Hex("#808080"):Hex("#DFDFDF")},
+            {"FolderIcon",Dark?Hex("#F3C84B"):Hex("#8F6400")},
+            {"Accent",accent},{"Focus",accent},{"AccentSoft",Dark?Hex("#303030"):Hex("#E7E7E7")},
             {"AccentText",Contrast(Colors.White,accent)>=4.5?Colors.White:Colors.Black},
             {"DisabledText",dim},
             {"Danger",ReadableAccent(Dark?Hex("#FF99A4"):Hex("#B00020"),panel)}
@@ -156,6 +192,9 @@ static class Appearance
             colors["Panel2"]=SystemColors.ControlColor;
             colors["Text"]=colors["Dim"]=colors["Dimmer"]=colors["Edge"]=colors["EdgeBright"]=SystemColors.WindowTextColor;
             colors["Accent"]=colors["Focus"]=colors["Danger"]=SystemColors.HighlightColor;
+            colors["Usage"]=SystemColors.HighlightColor;colors["UsageTrack"]=SystemColors.WindowColor;
+            colors["FolderIcon"]=SystemColors.WindowTextColor;
+            colors["CommandSurface"]=colors["Caption"]=colors["CaptionInactive"]=SystemColors.WindowColor;
             colors["AccentText"]=SystemColors.HighlightTextColor;
             colors["DisabledText"]=SystemColors.GrayTextColor;
         }
@@ -187,6 +226,8 @@ static class Appearance
         if (load) Load();
         if (windows.Count==0) { dispatcher=window.Dispatcher; SystemEvents.UserPreferenceChanged+=UserPreference; SystemParameters.StaticPropertyChanged+=SystemProperty; }
         windows.Add(window);
+        window.Activated+=delegate {ApplyNative(window);};
+        window.Deactivated+=delegate {ApplyNative(window);};
         window.SourceInitialized+=delegate {
             var source=HwndSource.FromHwnd(new WindowInteropHelper(window).Handle);
             source.AddHook(NativeMessage); ApplyNative(window);
@@ -204,7 +245,7 @@ static class Appearance
     static void ApplyNative(Window window)
     {
         var handle=new WindowInteropHelper(window).Handle; if (handle==IntPtr.Zero) return;
-        NativeDarkResult=NativeCornerResult=-1; Composition=false;
+        NativeDarkResult=NativeCornerResult=NativeCaptionResult=NativeCaptionTextResult=-1; Composition=false;
         try
         {
             bool enabled;
@@ -213,10 +254,15 @@ static class Appearance
             int dark=Dark && !HighContrast?1:0, corners=HighContrast?1:2;
             NativeDarkResult=DwmSetWindowAttribute(handle,20,ref dark,4);
             NativeCornerResult=DwmSetWindowAttribute(handle,33,ref corners,4);
+            int caption=HighContrast?-1:ColorRef(((SolidColorBrush)Brush(window.IsActive?"Caption":"CaptionInactive")).Color);
+            int captionText=HighContrast?-1:ColorRef(((SolidColorBrush)Brush(window.IsActive?"Text":"Dim")).Color);
+            NativeCaptionResult=DwmSetWindowAttribute(handle,35,ref caption,4);
+            NativeCaptionTextResult=DwmSetWindowAttribute(handle,36,ref captionText,4);
         }
         catch (DllNotFoundException) { }
         catch (EntryPointNotFoundException) { }
     }
+    static int ColorRef(Color color) { return color.R|(color.G<<8)|(color.B<<16); }
 }
 
 partial class MainUI

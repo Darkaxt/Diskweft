@@ -19,6 +19,9 @@ class Stage3Tests
 {
     [DllImport("user32.dll")] static extern IntPtr SendMessageW(IntPtr window,int message,IntPtr wParam,IntPtr lParam);
     [DllImport("user32.dll",EntryPoint="GetWindowLongW")] static extern int WindowStyle(IntPtr window,int index);
+    [DllImport("dwmapi.dll")] static extern int DwmFlush();
+    [StructLayout(LayoutKind.Sequential)] struct CaptureRect { public int Left,Top,Right,Bottom; }
+    [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr window,int attribute,out CaptureRect value,int size);
     [StructLayout(LayoutKind.Sequential,CharSet=CharSet.Unicode)]
     struct DisplayMode
     {
@@ -68,12 +71,16 @@ class Stage3Tests
             foreach (string accent in new[]{"#000000","#FFFFFF","#FFFF00","#00FF00","#00FFFF","#FF00FF","#FF0000","#D06010","#0078D4"})
             {
                 Appearance.Preferences=new AppearancePreferences{Mode=mode,AccentMode="Custom",CustomAccent=accent}; Appearance.Apply(); CheckContrast();
+                Check(ColorOf("Usage")== (Color)ColorConverter.ConvertFromString(mode=="Dark"?"#239FD0":"#0078D4"),"Space bars followed the custom accent instead of Windows blue.");
+                Check(Appearance.Contrast(ColorOf("Text"),ColorOf("Caption"))>=4.5,"Caption text contrast failed.");
+                Check(ColorOf("AccentSoft").R==ColorOf("AccentSoft").G && ColorOf("AccentSoft").G==ColorOf("AccentSoft").B,"Selection background is not Explorer-neutral.");
             }
         Appearance.Preferences=new AppearancePreferences(); Appearance.Apply();
         Check(Appearance.Dark,"Default System mode did not resolve the Windows preference.");
         systemDark=false; Appearance.Apply(); Check(!Appearance.Dark,"System light preference was ignored."); systemDark=true;
         systemContrast=true; Appearance.Apply();
         Check(ColorOf("Panel")==SystemColors.WindowColor && ColorOf("Text")==SystemColors.WindowTextColor,"High contrast did not use Windows colors.");
+        Check(ColorOf("Usage")==SystemColors.HighlightColor && ColorOf("UsageTrack")==SystemColors.WindowColor,"High contrast did not replace decorative usage colors.");
         systemContrast=false; Appearance.Preferences=new AppearancePreferences(); Appearance.Apply();
         evidence.Add("Palette contrast checked in both modes with very light/dark and saturated custom accents; System and high-contrast resolution use the real palette path.");
     }
@@ -85,7 +92,7 @@ class Stage3Tests
             if(key!=null)expected=Convert.ToInt32(key.GetValue("AppsUseLightTheme",1))==0;
         Check(Appearance.Dark==expected && Appearance.HighContrast==SystemParameters.HighContrast,"Actual Windows preference source did not match the current account.");
         if(!Appearance.HighContrast)CheckContrast();
-        File.WriteAllText(Path.Combine(output,"result.json"),new JavaScriptSerializer().Serialize(new {passed=true,scope="read-only actual Windows preference source",dark=Appearance.Dark,highContrast=Appearance.HighContrast,accent=ColorOf("Accent").ToString()}));
+        File.WriteAllText(Path.Combine(output,"result.json"),new JavaScriptSerializer().Serialize(new {passed=true,scope="read-only actual Windows preference source",dark=Appearance.Dark,highContrast=Appearance.HighContrast,accent=ColorOf("Accent").ToString(),source=Appearance.SystemAccentSource,caption=ColorOf("Caption").ToString(),command=ColorOf("CommandSurface").ToString(),field=ColorOf("FieldBackground").ToString(),selection=ColorOf("AccentSoft").ToString(),usage=ColorOf("Usage").ToString()}));
     }
     static void DpiProbe()
     {
@@ -115,6 +122,7 @@ class Stage3Tests
         foreach (string mode in new[]{"Light","Dark"})
         {
             ui.DiagnosticAppearance(mode,"Custom",mode=="Light"?"#0078D4":"#D06010"); CheckContrast();
+            if(Appearance.Composition)CheckCaption(ui.Window);
             Check(ui.Window.Background==Appearance.Brush("Ground"),"Window palette did not update.");
             ui.DiagnosticSettingsCapture(output,mode.ToLowerInvariant()+"-settings");
             ui.DiagnosticSettings(false);
@@ -149,6 +157,39 @@ class Stage3Tests
         ui.DiagnosticAppearance("System","System","#D06010");
         ui.DiagnosticSettings(false);ui.DiagnosticViewport(1280,820);ui.DiagnosticKeyboardTab();ui.DiagnosticCapture(output,"keyboard-focus");ui.DiagnosticSettings(true);
         evidence.Add("Real Settings Apply handler, inline invalid-color feedback, scrollable settings, light/dark native menus and measured client layouts at 960/1280/1600 DIP; actual WPF raster exports at 96/144/192 DPI.");
+    }
+    static void CheckCaption(Window window)
+    {
+        var caption=ColorOf(window.IsActive?"Caption":"CaptionInactive");
+        var text=ColorOf(window.IsActive?"Text":"Dim");
+        Check(Appearance.NativeCaptionResult==0 && Appearance.NativeCaptionTextResult==0,"Native caption colors were not applied.");
+        Check(Appearance.Contrast(caption,text)>=4.5,"Native caption palette contrast failed.");
+        // CAPTION_COLOR/TEXT_COLOR are documented Set attributes. Get returns
+        // E_INVALIDARG on this host; actual presented colors use host capture.
+    }
+    static void Caption()
+    {
+        var app=new Application();var ui=new MainUI();Exception failure=null;bool passed=false,active=false;
+        ui.Window.WindowStartupLocation=WindowStartupLocation.Manual;ui.Window.Left=50;ui.Window.Top=50;ui.Window.Topmost=true;
+        ui.Window.ContentRendered+=delegate {
+            try {
+                Check(Appearance.Composition,"The host DWM compositor is unavailable for caption verification.");
+                ui.Window.Activate();CheckCaption(ui.Window);ui.DiagnosticCapture(output,"explorer-colors");
+                string helper=Environment.GetEnvironmentVariable("DISKWEFT_SCREENSHOT_HELPER");
+                Check(!string.IsNullOrEmpty(helper) && File.Exists(helper),"Select the installed host screenshot helper for caption capture.");
+                Check(DwmFlush()==0,"Host composition did not acknowledge the presented frame.");
+                active=ui.Window.IsActive;
+                CaptureRect bounds;
+                Check(DwmGetWindowAttribute(new WindowInteropHelper(ui.Window).Handle,9,out bounds,16)==0,"Physical DWM frame bounds unavailable.");
+                string region=bounds.Left+","+bounds.Top+","+(bounds.Right-bounds.Left)+","+(bounds.Bottom-bounds.Top);
+                var start=new ProcessStartInfo(Path.Combine(Environment.SystemDirectory,@"WindowsPowerShell\v1.0\powershell.exe"),"-NoProfile -File \""+helper+"\" -Region "+region+" -Path \""+Path.Combine(output,"caption-window.png")+"\""){UseShellExecute=false,CreateNoWindow=true};
+                var capture=Process.Start(start);capture.WaitForExit();Check(capture.ExitCode==0,"Owned host caption capture failed.");passed=true;
+            }catch(Exception ex){failure=ex;}
+            ui.Window.Close();
+        };
+        app.Run(ui.Window);if(failure!=null)throw failure;
+        Check(passed && ui.DiagnosticWorkers==0,"Host caption probe did not finish and drain workers.");
+        File.WriteAllText(Path.Combine(output,"result.json"),new JavaScriptSerializer().Serialize(new{passed=true,composition=Appearance.Composition,captionSetAccepted=true,textSetAccepted=true,hostWindowCaptured=true,active=active,caption=ColorOf("Caption").ToString(),usage=ColorOf("Usage").ToString(),systemAccentSource=Appearance.SystemAccentSource}));
     }
     static void Native()
     {
@@ -241,6 +282,81 @@ class Stage3Tests
         evidence.Add("Real Windows setting/theme messages reached the owned HWND and updated the live WPF UI through the production notification path without restarting the scan; high-contrast colors use SystemColors with an isolated preference source override.");
         evidence.Add("Native caption style, stopped/complete/empty/actual ACL-denied states, exact terminal totals, selection and owned-thread exit passed in the disposable guest.");
     }
+    static void LiveSort()
+    {
+        string tree=Path.Combine(output,"fixture"),small=Path.Combine(tree,"a-small"),large=Path.Combine(tree,"b-large");
+        Directory.CreateDirectory(small);Directory.CreateDirectory(large);
+        for(int i=0;i<2100;i++)File.WriteAllBytes(Path.Combine(small,"item"+i.ToString("D4")+".bin"),new byte[1]);
+        File.WriteAllBytes(Path.Combine(large,"large.bin"),new byte[8192]);
+        var app=new Application();var ui=new MainUI();var releaseSmall=new ManualResetEvent(false);var releaseLarge=new ManualResetEvent(false);
+        Exception failure=null;int phase=0;bool sorted=false;Row directory=null,selected=null,anchor=null;
+        ScanSession.Enumerated=(session,node)=>{
+            if(node.Name=="a-small"){session.Publish(false,node,true);releaseSmall.WaitOne();}
+            if(node.Name=="b-large"){session.Publish(false,node,true);releaseLarge.WaitOne();}
+        };
+        app.DispatcherUnhandledException+=(s,e)=>{failure=e.Exception;e.Handled=true;releaseSmall.Set();releaseLarge.Set();ui.Window.Close();};
+        ui.ScanApplied+=(owner,batch)=>{
+            if(batch.Terminal)return;
+            if(phase==0 && owner.DiagnosticRoot!=null && owner.DiagnosticRoot.Files==2100)
+            {
+                phase=1;directory=owner.DiagnosticSelect(small);owner.DiagnosticKey(Key.Right);
+            }
+            else if(phase==2 && owner.DiagnosticRoot.Size==10292)
+            {
+                Check(owner.DiagnosticRoot.Dirs[0].Name=="b-large","Growing larger sibling did not move to the top while busy.");
+                Check(object.ReferenceEquals(selected,owner.DiagnosticSelection),"Live sorting changed the selected file identity.");
+                Check(directory.IsExpanded,"Live sorting collapsed an expanded directory.");
+                Check(object.ReferenceEquals(anchor,owner.DiagnosticTopVisibleRow),"Live sorting lost the visible scroll anchor.");
+                owner.DiagnosticCapture(output,"sorted-live");sorted=true;phase=3;releaseLarge.Set();
+            }
+        };
+        ui.ListingApplied+=(owner,row)=>{
+            if(phase!=1 || row!=directory)return;
+            owner.Window.Dispatcher.BeginInvoke(DispatcherPriority.Render,new Action(()=>{
+                selected=owner.DiagnosticScrollFiles();anchor=owner.DiagnosticTopVisibleRow;
+                Check(owner.DiagnosticScrollOffset>0,"Live sorting fixture did not scroll.");phase=2;releaseSmall.Set();
+            }));
+        };
+        ui.BecameIdle+=owner=>{
+            if(phase!=3)return;
+            Check(sorted && owner.DiagnosticRoot.Files==2101 && owner.DiagnosticRoot.Size==10292,"Sorted native scan totals mismatch.");
+            Check(object.ReferenceEquals(selected,owner.DiagnosticSelection),"Terminal reconciliation changed selection after sorting.");
+            owner.DiagnosticCapture(output,"sorted-terminal");phase=4;owner.Window.Close();
+        };
+        ui.Window.Loaded+=delegate{ui.DiagnosticScan(tree);};
+        try{app.Run(ui.Window);}finally{releaseSmall.Set();releaseLarge.Set();ScanSession.Enumerated=null;releaseSmall.Dispose();releaseLarge.Dispose();}
+        if(failure!=null)throw failure;
+        Check(phase==4 && ui.DiagnosticWorkers==0,"Live sorting ended without terminal reconciliation/worker exit.");
+        File.WriteAllText(Path.Combine(output,"result.json"),new JavaScriptSerializer().Serialize(new{passed=true,liveLargestFirst=true,selectedFileIdentity=true,expandedDirectory=true,scrollAnchor=true,exactTotals=true,ownedWorkers=ui.DiagnosticWorkers}));
+    }
+    static void ReleaseNotes()
+    {
+        var app=new Application();var ui=new MainUI();Exception failure=null;bool passed=false;
+        Directory.CreateDirectory(Ecosystem.Data);
+        File.WriteAllText(Path.Combine(Ecosystem.Data,"whatsnew-seen.txt"),"0.0.1");
+        ui.Window.ContentRendered+=delegate {
+            try
+            {
+                WhatsNew.OpenOnceAfterUpdate(ui.Window);
+                var notes=app.Windows.Cast<Window>().Single(w=>w!=ui.Window);
+                notes.UpdateLayout();
+                Check(notes.IsVisible && notes.ActualWidth>0 && notes.ActualHeight>0,"First-launch notes did not render.");
+                var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap((int)notes.ActualWidth,(int)notes.ActualHeight,96,96,PixelFormats.Pbgra32);
+                bitmap.Render(notes);
+                var encoder=new System.Windows.Media.Imaging.PngBitmapEncoder();encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+                using(var stream=File.Create(Path.Combine(output,"release-notes.png")))encoder.Save(stream);
+                notes.Close();
+                Check(File.ReadAllText(Path.Combine(Ecosystem.Data,"whatsnew-seen.txt"))==Updater.Current.ToString(),"First-launch acknowledgement was not saved after close.");
+                passed=true;
+            }
+            catch(Exception ex){failure=ex;}
+            ui.Window.Close();
+        };
+        app.Run(ui.Window);
+        if(failure!=null)throw failure;
+        Check(passed && ui.DiagnosticWorkers==0,"Release-notes workflow did not finish and drain owned workers.");
+        File.WriteAllText(Path.Combine(output,"result.json"),new JavaScriptSerializer().Serialize(new{passed=true,firstLaunchFromOldProfile=true,version=Updater.Current.ToString(),ownedWorkers=ui.DiagnosticWorkers}));
+    }
     [STAThread]
     static int Main(string[] args)
     {
@@ -248,6 +364,9 @@ class Stage3Tests
         Environment.SetEnvironmentVariable("DISKWEFT_TEST_ROOT",Path.Combine(output,"profile"));
         try
         {
+            if(args.Contains("--release-notes")){ReleaseNotes();return 0;}
+            if(args.Contains("--live-sort")){LiveSort();return 0;}
+            if(args.Contains("--caption")){Caption();return 0;}
             if(args.Contains("--dpi-probe")){DpiProbe();return 0;}
             if(args.Contains("--system-source")){ActualSystemSource();return 0;}
             if(args.Contains("--classic-ui"))

@@ -1,12 +1,12 @@
 [CmdletBinding()]
-param([string]$BuildRoot='D:/Temp/Diskweft-s4-build/release',[string]$OutputDirectory='D:/Projects/Diskweft/dist/0.1.0')
+param([string]$BuildRoot='D:/Temp/Diskweft-s4-build/release',[string]$OutputDirectory='D:/Projects/Diskweft/dist/0.1.1')
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
 $output=[IO.Path]::GetFullPath($OutputDirectory)
 [IO.Directory]::CreateDirectory($output) | Out-Null
 & "$projectRoot/build.ps1" -OutputDirectory $BuildRoot -InstallerOutputDirectory $output
 $version=[Diagnostics.FileVersionInfo]::GetVersionInfo("$BuildRoot/Diskweft.exe").FileVersion
-if($version -ne '0.1.0'){throw 'Release metadata must be 0.1.0'}
+if($version -ne '0.1.1'){throw 'Release metadata must be 0.1.1'}
 Copy-Item "$projectRoot/LICENSE" $BuildRoot
 Copy-Item "$projectRoot/Diskweft.ico" $BuildRoot
 Copy-Item "$projectRoot/docs/PORTABLE.md" "$BuildRoot/README.txt"

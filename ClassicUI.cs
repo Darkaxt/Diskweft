@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 partial class MainUI
@@ -203,8 +204,17 @@ partial class MainUI
             var top = DirectoryRow(root, 0); rows.Add(top); top.IsExpanded = true;
             treeList.SelectedItem = top;
         }
-        foreach (var parent in touchedParents) InsertDiscoveredChildren(parent);
+        foreach (var parent in touchedParents)
+        {
+            parent.Dirs.Sort((a,b) => {
+                int pending=(a.State==DirectoryState.Pending?1:0).CompareTo(b.State==DirectoryState.Pending?1:0);
+                int size=b.Size.CompareTo(a.Size);
+                return pending!=0?pending:size!=0?size:StringComparer.OrdinalIgnoreCase.Compare(a.Name,b.Name);
+            });
+            InsertDiscoveredChildren(parent);
+        }
         if (root != null) InsertDiscoveredChildren(root);
+        SortVisibleDirectories();
         displayExtensions = batch.Extensions;
         displayLargest = batch.Largest.Where(f => displayNodes.ContainsKey(f.Directory)).Select(f => new FileEntry {
             Dir = displayNodes[f.Directory], Name = f.Name, Size = f.Bytes, Modified = f.Modified
@@ -221,6 +231,45 @@ partial class MainUI
         if (!directoryRows.TryGetValue(node, out row)) directoryRows[node] = row = new Row { Node = node };
         row.Level = level;
         return row;
+    }
+    static ScrollViewer FindScroll(DependencyObject node)
+    {
+        var viewer=node as ScrollViewer;if(viewer!=null)return viewer;
+        for(int i=0;i<VisualTreeHelper.GetChildrenCount(node);i++)
+        {viewer=FindScroll(VisualTreeHelper.GetChild(node,i));if(viewer!=null)return viewer;}
+        return null;
+    }
+    void AppendVisible(Row row,HashSet<Row> visible,ILookup<Node,Row> files,List<Row> desired)
+    {
+        desired.Add(row);
+        if(!row.IsExpanded)return;
+        foreach(var child in row.Node.Dirs)
+        {
+            Row childRow;
+            if(directoryRows.TryGetValue(child,out childRow) && visible.Contains(childRow))AppendVisible(childRow,visible,files,desired);
+        }
+        desired.AddRange(files[row.Node]);
+    }
+    void SortVisibleDirectories()
+    {
+        if(root==null || rows.Count<2)return;
+        var visible=new HashSet<Row>(rows);
+        var desired=new List<Row>(rows.Count);
+        AppendVisible(directoryRows[root],visible,rows.Where(r=>r.File!=null).ToLookup(r=>r.File.Dir),desired);
+        if(rows.SequenceEqual(desired))return;
+        var selected=treeList.SelectedItems.Cast<Row>().ToArray();
+        var viewer=FindScroll(treeList);
+        double offset=viewer==null?0:viewer.VerticalOffset;
+        var anchor=rows[Math.Min(rows.Count-1,(int)Math.Floor(offset))];
+        for(int i=0;i<desired.Count;i++)
+            if(!object.ReferenceEquals(rows[i],desired[i]))rows.Move(rows.IndexOf(desired[i]),i);
+        foreach(var row in selected)if(!treeList.SelectedItems.Contains(row))treeList.SelectedItems.Add(row);
+        if(viewer!=null)
+        {
+            treeList.UpdateLayout();
+            viewer.ScrollToVerticalOffset(rows.IndexOf(anchor)+(offset-Math.Floor(offset)));
+            treeList.UpdateLayout();
+        }
     }
     void InsertDiscoveredChildren(Node parent)
     {

@@ -25,9 +25,9 @@ using WinForms = System.Windows.Forms;
 [assembly: System.Reflection.AssemblyProduct("Diskweft")]
 [assembly: System.Reflection.AssemblyCompany("Darkaxt")]
 [assembly: System.Reflection.AssemblyCopyright("MIT; Protagonist Labs and Darkaxt")]
-[assembly: System.Reflection.AssemblyVersion("0.1.0")]
-[assembly: System.Reflection.AssemblyFileVersion("0.1.0")]
-[assembly: System.Reflection.AssemblyInformationalVersion("0.1.0")]
+[assembly: System.Reflection.AssemblyVersion("0.1.1")]
+[assembly: System.Reflection.AssemblyFileVersion("0.1.1")]
+[assembly: System.Reflection.AssemblyInformationalVersion("0.1.1")]
 
 // The folder the Protagonist Labs apps share on this PC (%APPDATA%\ProtagonistLabs): each app writes its card in
 // apps\, and what it offers the others in data\. Diskweft writes its card, and reads Shelf's games, to name their
@@ -335,6 +335,7 @@ static class Brand
     public static Brush Dim { get { return Appearance.Brush("Dim"); } }
     public static Brush Dimmer { get { return Appearance.Brush("Dimmer"); } }
     public static Brush Accent { get { return Appearance.Brush("Accent"); } }
+    public static Brush Usage { get { return Appearance.Brush("Usage"); } }
     public static Brush Pink { get { return Appearance.Brush("Danger"); } }
     public static Brush Ground { get { return Appearance.Brush("Ground"); } }
 
@@ -367,7 +368,7 @@ public class Row : INotifyPropertyChanged
     public string Chevron { get { return !CanExpand ? "" : expanded ? "▾" : "▸"; } }
     public Thickness Indent { get { return new Thickness(Level * 18, 0, 0, 0); } }
     public string IconData { get { return Node != null ? FolderIcon : File.Summary ? "M0,0" : FileIcon; } }
-    public Brush IconBrush { get { return Node != null ? Brand.Accent : Brand.Dimmer; } }
+    public Brush IconBrush { get { return Node != null ? Appearance.Brush("FolderIcon") : Brand.Dimmer; } }
     public string DisplayName { get { return Node != null ? Node.Name + StateLabel + (ListingText.Length > 0 ? "   (" + ListingText + ")" : "") + GameLabel + BackupLabel : File.Name; } }
     string StateLabel { get { return Node.Denied ? "   (inaccessible)" : Node.State == DirectoryState.Complete ? "" : "   (" + Node.State.ToString().ToLowerInvariant() + ")"; } }
     string GameLabel { get { var g = Ecosystem.GameAt(Node); return g == null ? "" : string.Equals(g.Name, Node.Name, StringComparison.OrdinalIgnoreCase) ? "   · in Shelf" : "   · " + g.Name + " in Shelf"; } }
@@ -384,7 +385,7 @@ public class Row : INotifyPropertyChanged
     }
     public Brush NameBrush { get { return Node != null ? (Node.Denied ? Brand.Pink : Brand.Text) : File.Summary ? Brand.Dimmer : Brand.Dim; } }
     public double BarWidth { get { return PendingFileShare ? 0 : Math.Max(Size > 0 ? 1 : 0, Fraction * 150); } }
-    public Brush BarBrush { get { return Node != null ? Brand.Accent : Brand.Dim; } }
+    public Brush BarBrush { get { return Node != null ? Brand.Usage : Brand.Dim; } }
     public string SizeText { get { return Node != null && Node.State == DirectoryState.Pending ? "pending" : Brand.Fmt(Size); } }
     public string PctText { get { return PendingFileShare || (Node != null && Node.State == DirectoryState.Pending) ? "pending" : (Fraction * 100).ToString("0.0") + " %"; } }
     public string FilesText { get { return Node != null ? (Node.State == DirectoryState.Pending ? "pending" : Node.Files.ToString("N0")) : ""; } }
@@ -1239,7 +1240,7 @@ partial class MainUI
             list.Add(new DriveRow { Path = d.Name, Name = d.Name.TrimEnd('\\'), Kind = kind,
                 UsedText = Brand.Fmt(used), TotalText = Brand.Fmt(total), FreeText = Brand.Fmt(free),
                 BarWidth = total > 0 ? Math.Max(1, 180.0 * used / total) : 0,
-                BarBrush = total > 0 && free < total * 0.1 ? Brand.Pink : Brand.Accent });
+                BarBrush = total > 0 && free < total * 0.1 ? Brand.Pink : Brand.Usage });
         }
         driveList.ItemsSource = list;
     }

@@ -125,13 +125,8 @@ partial class MainUI
         return row;
     }
     internal object DiagnosticSelection { get { return treeList.SelectedItem; } }
-    static ScrollViewer FindScroll(DependencyObject node)
-    {
-        var viewer = node as ScrollViewer; if (viewer != null) return viewer;
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) { viewer = FindScroll(VisualTreeHelper.GetChild(node, i)); if (viewer != null) return viewer; }
-        return null;
-    }
     internal double DiagnosticScrollOffset { get { return FindScroll(treeList).VerticalOffset; } }
+    internal Row DiagnosticTopVisibleRow { get { treeList.UpdateLayout();return rows.Count==0?null:rows[Math.Min(rows.Count-1,(int)Math.Floor(DiagnosticScrollOffset))]; } }
     internal Row DiagnosticScrollFiles()
     {
         var row = rows.Where(r => r.File != null && !r.File.Summary).Skip(30).First();
@@ -185,6 +180,8 @@ partial class MainUI
             nativeDpiScale=PresentationSource.FromVisual(Window).CompositionTarget.TransformToDevice.M11,
             nativeCaption=System.Windows.Shell.WindowChrome.GetWindowChrome(Window)==null,
             nativeComposition=Appearance.Composition, nativeDarkResult=Appearance.NativeDarkResult,nativeCornerResult=Appearance.NativeCornerResult,
+            nativeCaptionResult=Appearance.NativeCaptionResult,nativeCaptionTextResult=Appearance.NativeCaptionTextResult,
+            systemAccentSource=Appearance.SystemAccentSource,
             units = "DIP", generation, revision = lastRenderedRevision, busy, ownedWorkers,
             rootOutcome = root == null ? null : root.Outcome,
             projectionRows = rows.Count, knownDirectories = displayNodes.Count,

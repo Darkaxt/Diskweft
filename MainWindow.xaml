@@ -19,6 +19,9 @@
     <SolidColorBrush x:Key="FieldBackground" Color="#2C2C2C"/>
     <SolidColorBrush x:Key="Edge" Color="#414141"/>
     <SolidColorBrush x:Key="EdgeBright" Color="#808080"/>
+    <SolidColorBrush x:Key="Usage" Color="#239FD0"/>
+    <SolidColorBrush x:Key="UsageTrack" Color="#808080"/>
+    <SolidColorBrush x:Key="CommandSurface" Color="#29201F"/>
     <SolidColorBrush x:Key="Danger" Color="#FF99A4"/>
     <SolidColorBrush x:Key="DisabledText" Color="#B8B8B8"/>
     <sys:Double x:Key="DisabledOpacity">0.5</sys:Double>
@@ -330,7 +333,7 @@
           <TextBlock Text="{Binding DisplayName}" Foreground="{Binding NameBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
         </DockPanel>
         <Grid Grid.Column="1" Width="150" Height="6" HorizontalAlignment="Left" Margin="12,0,0,0">
-          <Border Background="{DynamicResource Edge}" CornerRadius="3"/>
+          <Border Background="{DynamicResource UsageTrack}" CornerRadius="3"/>
           <Border Background="{Binding BarBrush}" CornerRadius="3" Width="{Binding BarWidth}" HorizontalAlignment="Left"/>
         </Grid>
         <TextBlock Grid.Column="2" Style="{StaticResource Num}" Text="{Binding SizeText}"/>
@@ -382,7 +385,7 @@
           <TextBlock Text="{Binding Kind}" Foreground="{DynamicResource Dimmer}" FontSize="12"/>
         </StackPanel>
         <Grid Grid.Column="1" Width="180" Height="8" HorizontalAlignment="Left" VerticalAlignment="Center">
-          <Border Background="{DynamicResource Edge}" CornerRadius="4"/>
+          <Border Background="{DynamicResource UsageTrack}" CornerRadius="4"/>
           <Border Background="{Binding BarBrush}" CornerRadius="4" Width="{Binding BarWidth}" HorizontalAlignment="Left"/>
         </Grid>
         <TextBlock Grid.Column="2" Style="{StaticResource Num}" Text="{Binding UsedText}"/>
@@ -470,11 +473,11 @@
         <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
 
-      <DockPanel Height="48" Margin="0">
+      <DockPanel Height="48" Margin="0" Background="{DynamicResource CommandSurface}">
         <Button x:Name="scanBtn" DockPanel.Dock="Right" Style="{StaticResource Primary}" Content="Scan" Margin="10,0,0,0" />
-        <Button x:Name="browseBtn" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Browse…" />
-        <Button x:Name="excludeBtn" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Settings" />
-        <Button x:Name="drivesBtn" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="Drives  ▾" />
+        <Button x:Name="browseBtn" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Background="{DynamicResource CommandSurface}" Content="Browse…" />
+        <Button x:Name="excludeBtn" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Background="{DynamicResource CommandSurface}" Content="Settings" />
+        <Button x:Name="drivesBtn" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Background="{DynamicResource CommandSurface}" Content="Drives  ▾" />
         <TextBox x:Name="pathBox" Style="{StaticResource Field}" Height="34" HorizontalAlignment="Stretch" />
       </DockPanel>
 
@@ -528,7 +531,7 @@
               <TextBlock Grid.Column="4" Style="{StaticResource Eyebrow}" Text="Files" HorizontalAlignment="Right" Margin="0,0,16,0"/>
             </Grid>
             <Border Grid.Row="0" VerticalAlignment="Bottom" Height="1" Background="{DynamicResource Edge}"/>
-            <ListBox x:Name="treeList" Grid.Row="1" Style="{StaticResource Rows}" ItemTemplate="{StaticResource TreeRow}" SelectionMode="Extended"/>
+            <ListBox x:Name="treeList" Grid.Row="1" Style="{StaticResource Rows}" ItemTemplate="{StaticResource TreeRow}" SelectionMode="Extended" VirtualizingPanel.ScrollUnit="Item"/>
             <StackPanel x:Name="emptyState" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,40">
               <TextBlock Text="Nothing scanned yet" FontFamily="{StaticResource Display}" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"/>
               <TextBlock Text="Pick a drive or folder above and press Scan. Whole NTFS drives are read straight from the MFT." Foreground="{DynamicResource Dim}" Margin="0,10,0,0" HorizontalAlignment="Center"/>

@@ -1,6 +1,6 @@
 # Diskweft implementation plan and reconciliation
 
-Authoritative source: [SPECIFICATION.md](SPECIFICATION.md), version 0.4.
+Authoritative source: [SPECIFICATION.md](SPECIFICATION.md), version 0.7.
 Updated: 2026-11-04. Current authorization: complete through S5,
 "You may start working on this all the way in" (`already_authorized`).
 
@@ -12,11 +12,13 @@ Updated: 2026-11-04. Current authorization: complete through S5,
 | S1 - Independent identity and classic live scanning | COMPLETE | Real folder/UNC scan -> consistent live tree/statistics -> navigation -> correct terminal result, with independent Diskweft identities | ID-01; SCAN-01,03..07 for classic; COMPAT-01 for affected classic paths |
 | S2 - Progressive NTFS/MFT scanning | COMPLETE | Real volume -> progressive resolved folders/statistics -> navigation -> final result; safe fallback and all-drives integration | SCAN-02; SCAN-03..07 for MFT/mixed scans; affected COMPAT-01, VERIFY-01 |
 | S3 - Windows 11 appearance and accents | COMPLETE | Native light/dark/high-contrast UI, Appearance persistence and live accent/theme changes across completed scan workflows | UI-01..04 |
-| S4 - Integrated verification and final delivery | ACTIVE | Full specification reconciliation, compatibility/performance evidence, verified final commit and independently retrieved normal release | PERF-01, VERIFY-01, DELIVER-01; integrated ID/SCAN/UI/COMPAT acceptance |
-| S5 - Replace installed SpaceScan with Diskweft | NOT STARTED | Verified Diskweft installation and preserved data, existing SpaceScan launch/integration routes replaced, rollback proved and obsolete owned registrations retired | MIGRATE-01 |
+| S4 - Integrated verification and final delivery | ACTIVE | Full specification reconciliation, compatibility/performance evidence, verified final commit and independently retrieved normal release | PERF-01, VERIFY-01, DELIVER-01, UI-05; integrated ID/SCAN/UI/COMPAT acceptance |
+| S5 - Replace installed SpaceScan with Diskweft | BLOCKED | Verified Diskweft installation and preserved data, existing SpaceScan launch/integration routes replaced, rollback proved and obsolete owned registrations retired | MIGRATE-01 |
 
 Only one stage may be ACTIVE. S1 depends on S0; S2 on S1; S3 on S2; S4 on S3.
 S5 depends on the verified S4 release and a fresh installation/consumer inventory.
+User scope change2026-11-04: Pathweft integration belongs to the user. Preserve
+its caller/source/runtime unchanged; this is an explicit exclusion, not a deferral.
 No release follows an individual feature stage. S0's docs/source publication is
 setup delivery, not a Diskweft product release. Execution through S5 is authorized;
 advance sequentially only after the current stage meets its acceptance criteria.
@@ -31,8 +33,8 @@ advance sequentially only after the current stage meets its acceptance criteria.
 | ENV-04 | Complete mapping, design/verification contract, development notes, actual evidence, private reference handling and scratch cleanup | PASS: committed/published documents and helpers read back; all requirements assigned; private reference ignored; fixture/preflight cleanup applied |
 
 S0 reconciliation: ENV-01..04 satisfied and verified. No remaining S0 acceptance
-criteria, blockers or tracked deferrals. S0-S3 are COMPLETE.
-S4 is ACTIVE; S5 remains NOT STARTED.
+criteria, blockers or tracked deferrals. S0-S3 are COMPLETE; S4 is ACTIVE again;
+S5 is BLOCKED/parked behind its corrected-release dependency.
 Evidence: [S0 baseline](verification/S0-BASELINE.md).
 
 ## S1 current reconciliation
@@ -79,7 +81,22 @@ cleanup transaction `29e0594183ec4d4e47dc96cb2ee3218e` applied signed manifest
 Exact E: test and D: native-build roots were confirmed absent. S4 subsequently
 became ACTIVE; S5 has not begun.
 
-S4 current reconciliation: ACTIVE. PERF-01 now passes on the current implementation:
+S4 reconciliation: ACTIVE again. First actual installed launch with existing
+profile0.0.1 opens the new0.1.0 notes; no November banner is embedded, and Banner
+initializes BitmapImage with a null stream. UI-04/COMPAT-01/DELIVER-01 are blocked
+internally until missing-image notes render safely and maintenance0.1.1 is
+published/retrieved/verified. S5 is parked: copied data/recovery are preserved,
+SpaceScan remains installed and Pathweft untouched. PERF-01 remains applicable:
+
+The user also authorized automatic largest-first live sibling ordering and
+Explorer color parity without layout changes, including blue usage bars. These
+are current S4 SCAN-05/UI-05 requirements. Both red reproductions and corrected
+native workflows pass. Current actual1.19-million-file NTFS UI p95 is39.589 ms;
+first useful WPF533.3272 ms. Native palette/layout/notifications/persistence and
+normal installed/portable/uninstall checks pass; actual host caption captured.
+S5 migration is preserved: exact legacy history copied and loaded by both original
+recovery and installed readers, legacy-unknown provenance, recovery hashes and
+controlled execution of the recovered original scanner passed. Pathweft excluded.
 classic baseline/fork medians 781.7848 / 808.9633 ms (+3.4765%, same paired median),
 NTFS 1,863.1023 / 1,949.3709 ms (+4.6304%, same paired median). Each comparison has
 three alternating paired runs after warm-up. Classic uses identical process-only
@@ -92,12 +109,16 @@ The new raw reader has two fixed buffers, one serialized reader and guaranteed
 join before handle close. Real MFT query and scan/cancel/restart/mixed-root
 checks passed under request `9842ce6358bd4b928344517ef63b634d` (exit 0).
 
-Remaining S4 advancement blockers are internal delivery/verification work:
-final source reconciliation,
-commit and normal release publication followed by independent delivered-asset
-retrieval/verification. Resolve these to satisfy DELIVER-01 and close S4. No
-external administrator impediment remains. S5 is NOT STARTED behind delivery.
-Current packages are `dist/0.1.0`; earlier candidates are superseded. See
+Initial DELIVER-01 evidence: normal v0.1.0 published on Darkaxt/Diskweft with installer,
+portable and SHA256SUMS, tag/source commit cb5c0f59866d6e460946786eee221b2d4f76afbe.
+GitHub bridge independently read back publication and assets; gh downloaded them
+again. Package hashes, extracted version/configuration/MIT, signature status and
+actual downloaded portable native/CLI behavior passed. The identical installer
+hash passed installed native/CLI/uninstall in the owned guest. The discovered
+startup defect and explicit user changes require maintenance0.1.1: publication
+and independent retrieval/verification remain internal S4 advancement blockers.
+S5 stays parked with installation/data/recovery preserved. No tracked deferrals.
+Current candidates are `dist/0.1.1`. See
 [S4 evidence](verification/S4-INTEGRATED-DELIVERY.md) for exact hashes and scope.
 
 The earlier S4 Sandbox `bf80b4a0-20ff-42b1-bd8d-b5508984de5d` completed the prior
@@ -184,13 +205,13 @@ and current versioned deliverables remain available for delivery verification.
 
 ### S5 - Replace installed SpaceScan with Diskweft
 
-- Inventory the installed application/version, settings/history and all actual
-  launch/integration consumers. Include Pathweft's scan route when present.
+- Inventory installed application/version, settings/history and actual consumers.
+  Record Pathweft's scan route but leave its integration to the user.
 - Establish a concrete rollback record; preserve original user data and compare
   hashes/conversion results before switching routes.
 - Install the independently verified S4 package, migrate applicable settings and
   history, then switch owned shortcuts/shell/caller registrations to Diskweft.
-- Verify real installed launches, caller arguments, classic/MFT operation and
+- Verify real installed launches, shell arguments, classic/MFT operation and
   history access; prove rollback before retiring obsolete SpaceScan registrations
   or installation files. Use broker consent for administrator changes and the
   proper reviewed cleanup path for explicitly retired generated/install outputs.

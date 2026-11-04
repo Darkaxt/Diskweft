@@ -39,7 +39,7 @@ class Stage4Bench
                 if((ownedProcess.ProcessorAffinity.ToInt64()&mask)==0)throw new Exception("Benchmark processor is outside inherited affinity");
                 ownedProcess.ProcessorAffinity=new IntPtr(mask);
             }
-            if (args[0]=="native" || args[0]=="native-host")return Native(args[1],args[2],args[0]=="native-host");
+            if (args[0]=="native" || args[0]=="native-host" || args[0]=="native-mft")return Native(args[1],args[2],args[0]!="native",args[0]=="native-mft");
             if (args[0]=="prepare")
             {
                 string fixture=Path.GetFullPath(args[1]);
@@ -123,12 +123,14 @@ class Stage4Bench
         }
         catch(Exception ex){Console.Error.WriteLine(ex);return 1;}
     }
-    static int Native(string fixture,string output,bool host)
+    static int Native(string fixture,string output,bool host,bool mft)
     {
         if(host)
         {
-            if(!Path.GetFullPath(fixture).Equals(@"D:\Temp\Diskweft-s4-optimization\classic\mount\million",StringComparison.OrdinalIgnoreCase)
-                || !Path.GetFullPath(output).Equals(@"D:\Projects\Diskweft\.local\s4\performance\classic-native\wpf",StringComparison.OrdinalIgnoreCase))
+            bool exact=mft
+                ?Path.GetFullPath(fixture).Equals(@"E:\",StringComparison.OrdinalIgnoreCase) && Path.GetFullPath(output).Equals(@"D:\Projects\Diskweft\.local\s4\maintenance-mft",StringComparison.OrdinalIgnoreCase)
+                :Path.GetFullPath(fixture).Equals(@"D:\Temp\Diskweft-s4-optimization\classic\mount\million",StringComparison.OrdinalIgnoreCase) && Path.GetFullPath(output).Equals(@"D:\Projects\Diskweft\.local\s4\performance\classic-native\wpf",StringComparison.OrdinalIgnoreCase);
+            if(!exact)
                 throw new Exception("Host native performance requires the exact owned read-only fixture and isolated output.");
         }
         else if(Environment.GetEnvironmentVariable("DISKWEFT_SANDBOX")!="1")throw new Exception("Native performance must run in the owned guest.");
@@ -136,7 +138,7 @@ class Stage4Bench
         Environment.SetEnvironmentVariable("DISKWEFT_TEST_ROOT",Path.Combine(output,"profile"));
         var app=new Application();var ui=new MainUI();
         var samples=new List<double>();Exception failure=null;
-        long started=0, usableMetadata=0;double firstUseful=-1;int waiting=0;bool selected=false;
+        long started=0, usableMetadata=0;double firstUseful=-1;int waiting=0;bool selected=false,mftObserved=false;
         ScanSession.Published=(session,node)=>{if(usableMetadata==0 && session.Root!=null && session.Root.Files>0)Interlocked.CompareExchange(ref usableMetadata,Stopwatch.GetTimestamp(),0);};
         var timer=new Timer(state=>{
             if(Interlocked.CompareExchange(ref waiting,1,0)!=0)return;
@@ -147,6 +149,7 @@ class Stage4Bench
             }));
         },null,Timeout.Infinite,Timeout.Infinite);
         ui.ScanApplied+=(owner,batch)=>{
+            mftObserved|=batch.Mode!=null && batch.Mode.Contains("MFT (progressive records)");
             if(!batch.Terminal && owner.DiagnosticRoot!=null && owner.DiagnosticRoot.Files>0)
             {
                 if(firstUseful<0)firstUseful=1000.0*(Stopwatch.GetTimestamp()-Interlocked.Read(ref usableMetadata))/Stopwatch.Frequency;
@@ -161,7 +164,7 @@ class Stage4Bench
             {
                 timer.Change(Timeout.Infinite,Timeout.Infinite);
                 samples.Sort();
-                if(owner.DiagnosticRoot==null || owner.DiagnosticRoot.Files!=1000000 || owner.DiagnosticRoot.Size!=747520000L)throw new Exception("Native million-file totals mismatch.");
+                if(owner.DiagnosticRoot==null || (mft?owner.DiagnosticRoot.Files<1000000 || !mftObserved:owner.DiagnosticRoot.Files!=1000000 || owner.DiagnosticRoot.Size!=747520000L))throw new Exception("Native million-file totals/engine mismatch.");
                 double p95=samples.Count==0?double.PositiveInfinity:samples[(int)Math.Ceiling(samples.Count*.95)-1];
                 if(samples.Count<20 || p95>100 || firstUseful<0 || firstUseful>1000 || !selected)throw new Exception("Native performance acceptance failed: p95="+p95+", samples="+samples.Count+", firstUseful="+firstUseful);
                 owner.DiagnosticCapture(output,"million-terminal");
@@ -169,7 +172,7 @@ class Stage4Bench
                     firstUsefulFromProducerPublicationMs=firstUseful,startToUsefulProducerMetadataMs=1000.0*(usableMetadata-started)/Stopwatch.Frequency,
                     startToFirstUsefulWpfMs=1000.0*(usableMetadata-started)/Stopwatch.Frequency+firstUseful,
                     dispatcherP95Ms=p95,dispatcherMaxMs=samples.Last(),samples=samples.Count,navigationDuringScan=selected,ownedWorkers=owner.DiagnosticWorkers,
-                    boundary=(host?"Owned host WPF actions; real million-file read-only VHD fixture":"Owned headless guest WPF actions; real million-file read-only host mapping")+"; metadata origin is first nonzero resolved producer publication, not first raw OS record; 10ms diagnostic cadence, one outstanding sample"});
+                    boundary=(mft?"Owned host WPF actions; actual raw NTFS E: with more than one million files":host?"Owned host WPF actions; real million-file read-only VHD fixture":"Owned headless guest WPF actions; real million-file read-only host mapping")+"; metadata origin is first nonzero resolved producer publication, not first raw OS record; 10ms diagnostic cadence, one outstanding sample"});
             }
             catch(Exception ex){failure=ex;}
             owner.Window.Close();
