@@ -14,6 +14,24 @@ using System.Web.Script.Serialization;
 
 partial class MainUI
 {
+    internal static Func<bool> DeleteDecision;
+    internal static Action BeforeShellDelete;
+    internal static Action<string> FileActionErrorObserved;
+    internal void DiagnosticMenuAction(string action)
+    {
+        var item=menu.Items.OfType<MenuItem>().First(i => (string)i.Tag==action);
+        item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent,item));
+    }
+    internal string DiagnosticStatus { get { return status.Text; } }
+    internal void DiagnosticAddSelection(string path)
+    { treeList.SelectedItems.Add(DiagnosticRow(path)); }
+    Row DiagnosticRow(string path)
+    {
+        Node node;Row row;
+        if(!displayNodes.TryGetValue(path,out node))throw new InvalidOperationException("No displayed node for "+path+"; known="+string.Join("|",displayNodes.Keys.Take(20)));
+        if(!directoryRows.TryGetValue(node,out row))throw new InvalidOperationException("No instantiated directory row for "+path);
+        return row;
+    }
     [StructLayout(LayoutKind.Sequential)] struct DiagnosticRect { public int Left,Top,Right,Bottom; }
     [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr window,out DiagnosticRect rect);
     [DllImport("user32.dll")] static extern IntPtr SendMessageW(IntPtr window,int message,IntPtr wParam,IntPtr lParam);
@@ -118,7 +136,7 @@ partial class MainUI
     internal Row DiagnosticSelect(string path)
     {
         tabTree.IsChecked = true;
-        var row = directoryRows[displayNodes[path]];
+        var row = DiagnosticRow(path);
         treeList.SelectedItem = row;
         treeList.ScrollIntoView(row);
         treeList.UpdateLayout();

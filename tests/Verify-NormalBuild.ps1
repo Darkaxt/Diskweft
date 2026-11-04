@@ -9,7 +9,7 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 $exe = Join-Path ([IO.Path]::GetFullPath($BuildRoot)) 'Diskweft.exe'
 $baseline = Join-Path $projectRoot '.local\baseline\SpaceScan-1.4.1.exe'
 $scratch = [IO.Path]::GetFullPath($ScratchRoot)
-if ($scratch -notmatch '^E:\\Temp\\Diskweft-(?:s[1-4]|s4-optimization|release-notes-fix)-[0-9]{8}$') { throw 'Use owned Diskweft acceptance scratch.' }
+if ($scratch -notmatch '^E:\\Temp\\Diskweft-(?:s[1-4]|s4-optimization|release-notes-fix|file-actions(?:-resume)?)-[0-9]{8}$') { throw 'Use owned Diskweft acceptance scratch.' }
 $run = Join-Path $scratch ('normal-' + [Guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory((Join-Path $run 'fixture\child')) | Out-Null
 [IO.File]::WriteAllBytes((Join-Path $run 'fixture\one.bin'), (New-Object byte[] 1024))
@@ -41,7 +41,7 @@ try {
     $assembly = [Reflection.Assembly]::LoadFile($exe)
     $flags = [Reflection.BindingFlags]'Static,NonPublic,Public,Instance'
     $ui = $assembly.GetType('MainUI')
-    if ($ui.GetMethod('DiagnosticScan', $flags) -or $ui.GetField('DiagnosticDrivePaths', $flags) -or $assembly.GetType('ScanSession').GetField('Enumerated', $flags) -or $assembly.GetType('Mft').GetField('RecordsObserved', $flags) -or $assembly.GetType('Mft').GetMethod('ReplayRecords', $flags) -or $assembly.GetType('Appearance').GetField('SystemOverride', $flags)) {
+    if ($ui.GetMethod('DiagnosticScan', $flags) -or $ui.GetField('DeleteDecision',$flags) -or $ui.GetField('BeforeShellDelete',$flags) -or $ui.GetField('DiagnosticDrivePaths', $flags) -or $assembly.GetType('ScanSession').GetField('Enumerated', $flags) -or $assembly.GetType('Mft').GetField('RecordsObserved', $flags) -or $assembly.GetType('Mft').GetMethod('ReplayRecords', $flags) -or $assembly.GetType('Appearance').GetField('SystemOverride', $flags)) {
         throw 'Test actions/barriers leaked into the normal build.'
     }
     $eco = $assembly.GetType('Ecosystem')

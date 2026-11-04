@@ -3,10 +3,14 @@ param(
     [string]$OutputDirectory,
     [switch]$Diagnostics,
     [switch]$Test,
+    [string]$AppSource,
     [ValidateSet('Stage1Tests','Stage2Tests','Stage3Tests','Stage4Bench')][string]$TestEntry = 'Stage1Tests'
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+if($AppSource -and -not $Test){throw 'Alternate app source is test-only'}
+if(-not $AppSource){$AppSource=Join-Path $projectRoot 'App.cs'}
+$AppSource=[IO.Path]::GetFullPath($AppSource)
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $projectRoot '.local\development' }
 $outputRoot = [IO.Path]::GetFullPath($OutputDirectory)
 [IO.Directory]::CreateDirectory($outputRoot) | Out-Null
@@ -23,9 +27,9 @@ $arguments = @('/nologo', "/target:$target", '/optimize', '/platform:anycpu', '/
     "/resource:$projectRoot\Diskweft.ico,Diskweft.ico",
     "/resource:$projectRoot\WhatsNew\1.4.jpg,WhatsNew.1.4.jpg", "/resource:$projectRoot\WhatsNew\m09.jpg,WhatsNew.m09.jpg",
     "/resource:$projectRoot\WhatsNew\m10.jpg,WhatsNew.m10.jpg", "/out:$outputRoot\$name",
-    "$projectRoot\SpaceScan.cs", "$projectRoot\MftProgress.cs", "$projectRoot\MftStreaming.cs", "$projectRoot\LiveScan.cs", "$projectRoot\ClassicUI.cs", "$projectRoot\Diagnostics.cs", "$projectRoot\Appearance.cs", "$projectRoot\App.cs", "$projectRoot\WhatsNew.cs")
+    "$projectRoot\SpaceScan.cs", "$projectRoot\MftProgress.cs", "$projectRoot\MftStreaming.cs", "$projectRoot\LiveScan.cs", "$projectRoot\ClassicUI.cs", "$projectRoot\Diagnostics.cs", "$projectRoot\Appearance.cs", "$projectRoot\ShellDelete.cs", $AppSource, "$projectRoot\WhatsNew.cs")
 if ($Diagnostics -or $Test) { $arguments += '/define:DISKWEFT_TEST' }
-if ($Test) { $arguments += "/main:$TestEntry"; $arguments += "$projectRoot\tests\Stage1Tests.cs"; $arguments += "$projectRoot\tests\Stage2Tests.cs"; $arguments += "$projectRoot\tests\Stage3Tests.cs"; $arguments += "$projectRoot\tests\Stage4Bench.cs" }
+if ($Test) { $arguments += "/main:$TestEntry"; $arguments += "$projectRoot\tests\Stage1Tests.cs"; $arguments += "$projectRoot\tests\Stage2Tests.cs"; $arguments += "$projectRoot\tests\Stage3Tests.cs"; $arguments += "$projectRoot\tests\Stage4Bench.cs"; $arguments += "$projectRoot\tests\FileActionTests.cs" }
 & $compiler @arguments
 if ($LASTEXITCODE -ne 0) { throw 'Diskweft compilation failed.' }
 Copy-Item -LiteralPath (Join-Path $projectRoot 'app.config') -Destination (Join-Path $outputRoot ($name + '.config'))

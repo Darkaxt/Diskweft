@@ -16,8 +16,25 @@ by the user; its source/runtime/caller remain unchanged.
 | S4 - Integrated verification and product delivery | COMPLETE | Compatibility/performance acceptance; corrected normal v0.1.1 independently delivered, including live order and Explorer colors | PERF-01, VERIFY-01, DELIVER-01, UI-05; integrated ID/SCAN/UI/COMPAT |
 | S5 - Installed system replacement | COMPLETE | Installed 0.1.1 launch/classic/raw NTFS/history/routes verified; data/recovery preserved; SpaceScan uninstalled and obsolete registrations retired | MIGRATE-01 |
 
-All assigned acceptance criteria are satisfied and verified. Remaining criteria:
-none. Blockers: none. Tracked deferrals: none. No stage is ACTIVE or BLOCKED.
+The original S0-S5 criteria are satisfied and verified. Maintenance below is
+authorized by the reported recycle freeze and post-copy Clipboard.Flush failure.
+
+| Maintenance stage | Status | Acceptance |
+| --- | --- | --- |
+| M1 - Responsive recycle and reliable Copy path | COMPLETE | FIX-01/02 verified: actual context-menu recycle/bin entry and parent reconciliation; dispatcher, cancel/error/busy/close safety; clipboard Unicode/persistence/contention; affected UI regressions and absent production hooks; installed/portable/uninstall packages |
+| M2 - Verified maintenance delivery | ACTIVE | FIX-DELIVERY: publish/retrieve v0.1.2 and verify actual local update with existing data preserved |
+
+The policy blocker is resolved through the user-installed Coordinator 0.20.4 and
+updated skill 1.1.0 sandbox.powershell route. Actual receipts prove reviewed script
+entry, STA/process-only RemoteSigned and no host/persistent policy change.
+FIX-01/02 native recycle/permanent-delete/busy/close/error reconciliation and
+clipboard contention/Unicode/persistence pass; actual bin entry is verified.
+Classic navigation/restart/listing/history, live ordering and notes regressions
+pass. Normal installed/portable CLI/native scan and uninstall pass. All M1
+acceptance is satisfied; no blockers or tracked deferrals. M2's remaining criteria
+are publication/retrieval and actual installed update verification. See
+[M1 evidence](verification/M1-FILE-ACTIONS.md).
+The [policy issue report](verification/M1-SANDBOX-POLICY-BLOCKER.md) is historical.
 
 Execution order was S0 -> S1 -> S2 -> S3 -> S4 -> S5, with at most one ACTIVE
 stage. Actual S5 first launch exposed a release-notes defect: S5 was parked,

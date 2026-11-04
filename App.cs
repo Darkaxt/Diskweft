@@ -25,8 +25,8 @@ using WinForms = System.Windows.Forms;
 [assembly: System.Reflection.AssemblyProduct("Diskweft")]
 [assembly: System.Reflection.AssemblyCompany("Darkaxt")]
 [assembly: System.Reflection.AssemblyCopyright("MIT; Protagonist Labs and Darkaxt")]
-[assembly: System.Reflection.AssemblyVersion("0.1.1")]
-[assembly: System.Reflection.AssemblyFileVersion("0.1.1")]
+[assembly: System.Reflection.AssemblyVersion("0.1.2")]
+[assembly: System.Reflection.AssemblyFileVersion("0.1.2")]
 [assembly: System.Reflection.AssemblyInformationalVersion("0.1.1")]
 
 // The folder the Protagonist Labs apps share on this PC (%APPDATA%\ProtagonistLabs): each app writes its card in
@@ -819,7 +819,13 @@ partial class MainUI
         m.IsOpen = true;
     }
 
-    void Error(string msg) { MessageBox.Show(Window, msg, "Diskweft", MessageBoxButton.OK, MessageBoxImage.Error); }
+    void Error(string msg)
+    {
+#if DISKWEFT_TEST
+        if(FileActionErrorObserved!=null){FileActionErrorObserved(msg);return;}
+#endif
+        MessageBox.Show(Window, msg, "Diskweft", MessageBoxButton.OK, MessageBoxImage.Error);
+    }
 
     void SetView(int v)
     {
@@ -1344,6 +1350,11 @@ partial class MainUI
 
     void ShowProgress()
     {
+        if (fileOperationActive)
+        {
+            status.Text = scanBtn.Content + "  •  " + sw.Elapsed.TotalSeconds.ToString("0") + "s";
+            return;
+        }
         long seen = Scanner.FilesSeen, total = Scanner.Total;
         if (phase == 3)
             status.Text = string.Format("Working…  •  {0:0}s", sw.Elapsed.TotalSeconds);
@@ -1549,7 +1560,49 @@ partial class MainUI
     void CopyPath(List<object> tags)
     {
         var paths = tags.Select(PathOf).Where(p => p != null).ToList();
-        if (paths.Count > 0) Clipboard.SetText(string.Join("\r\n", paths));
+        if (paths.Count == 0) return;
+        try
+        {
+            WriteClipboardText(new WindowInteropHelper(Window).Handle, string.Join("\r\n", paths));
+            status.Text = "Copied " + paths.Count.ToString("N0") + " path(s).";
+        }
+        catch (System.ComponentModel.Win32Exception ex)
+        { status.Text = "Copy path: Windows couldn't update the clipboard. " + ex.Message; }
+    }
+
+    [DllImport("user32.dll", SetLastError=true)] static extern bool OpenClipboard(IntPtr owner);
+    [DllImport("user32.dll", SetLastError=true)] static extern bool EmptyClipboard();
+    [DllImport("user32.dll")] static extern bool CloseClipboard();
+    [DllImport("user32.dll", SetLastError=true)] static extern IntPtr SetClipboardData(uint format, IntPtr data);
+    [DllImport("kernel32.dll", SetLastError=true)] static extern IntPtr GlobalAlloc(uint flags, UIntPtr bytes);
+    [DllImport("kernel32.dll", SetLastError=true)] static extern IntPtr GlobalLock(IntPtr memory);
+    [DllImport("kernel32.dll")] static extern bool GlobalUnlock(IntPtr memory);
+    [DllImport("kernel32.dll")] static extern IntPtr GlobalFree(IntPtr memory);
+    static void WriteClipboardText(IntPtr owner, string text)
+    {
+        // Immediate CF_UNICODETEXT transfers ownership once. There is no delayed
+        // OLE object/Flush, which can fail after another app has already pasted.
+        byte[] bytes = Encoding.Unicode.GetBytes(text + "\0");
+        IntPtr memory = GlobalAlloc(2, new UIntPtr((uint)bytes.Length));
+        if (memory == IntPtr.Zero) throw new System.ComponentModel.Win32Exception();
+        bool opened = false;
+        try
+        {
+            IntPtr buffer = GlobalLock(memory);
+            if (buffer == IntPtr.Zero) throw new System.ComponentModel.Win32Exception();
+            try { Marshal.Copy(bytes, 0, buffer, bytes.Length); }
+            finally { GlobalUnlock(memory); }
+            if (!OpenClipboard(owner)) throw new System.ComponentModel.Win32Exception();
+            opened = true;
+            if (!EmptyClipboard() || SetClipboardData(13, memory) == IntPtr.Zero)
+                throw new System.ComponentModel.Win32Exception();
+            memory = IntPtr.Zero; // Windows now owns the allocation, including after process exit.
+        }
+        finally
+        {
+            if (opened) CloseClipboard();
+            if (memory != IntPtr.Zero) GlobalFree(memory);
+        }
     }
 
     void ShowProperties(object tag)
@@ -1567,34 +1620,58 @@ partial class MainUI
         if (n != null) Rescan(new List<Node> { n });
     }
 
-    // ponytail: shell operations go through SHFileOperation, which fails on paths > 260 chars (an error dialog is shown).
+    bool fileOperationActive;
+    // Existing Windows shell semantics; execute on an owned STA, never the dispatcher.
     void Delete(List<object> tags, bool permanent)
     {
-        if (busy) return;
+        if (busy || closing) return;
         var items = tags.Where(t => PathOf(t) != null).ToList();
         if (items.Count == 0) return;
         if (items.Any(t => t is Node && ((Node)t).Parent == null)) { Error("The scan root can't be deleted."); return; }
         long size = items.Sum(t => t is Node ? ((Node)t).Size : ((FileEntry)t).Size);
-        // One item to the Recycle Bin: the shell asks. Otherwise we ask once for the whole selection.
-        bool ask = permanent || items.Count > 1;
-        if (ask && MessageBox.Show(Window, string.Format("{0} {1:N0} item(s), {2}?\n\n{3}{4}",
+        bool confirmed;
+#if DISKWEFT_TEST
+        if (DeleteDecision != null) confirmed = DeleteDecision();
+        else
+#endif
+        confirmed = MessageBox.Show(Window, string.Format("{0} {1:N0} item(s), {2}?\n\n{3}{4}",
                 permanent ? "PERMANENTLY delete" : "Move to the Recycle Bin:", items.Count, Brand.Fmt(size),
                 string.Join("\n", items.Take(10).Select(PathOf)) + (items.Count > 10 ? "\n…" : ""),
                 permanent ? "\n\nThis can't be undone." : ""),
-                permanent ? "Delete permanently" : "Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
-            return;
-        var uiOption = ask ? UIOption.OnlyErrorDialogs : UIOption.AllDialogs;
-        var recycle = permanent ? RecycleOption.DeletePermanently : RecycleOption.SendToRecycleBin;
-        foreach (var t in items)
+                permanent ? "Delete permanently" : "Move to Recycle Bin", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes;
+        if (!confirmed) return;
+        var entries = items.Select(PathOf).ToList();
+        IntPtr operationOwner = new WindowInteropHelper(Window).Handle;
+        var missing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        string failure = null;
+        bool cancelled = false;
+        fileOperationActive = true; phase = 3; SetBusy(true);
+        progress.Width = 0;
+        scanBtn.Content = permanent ? "Deleting…" : "Recycling…"; scanBtn.IsEnabled = false;
+        status.Text = (permanent ? "Deleting " : "Recycling ") + entries.Count.ToString("N0") + " item(s)…";
+        RunOwned(() =>
         {
-            try
+            foreach (var entry in entries)
             {
-                if (t is Node) FileSystem.DeleteDirectory(PathOf(t), uiOption, recycle, UICancelOption.DoNothing);
-                else FileSystem.DeleteFile(PathOf(t), uiOption, recycle, UICancelOption.DoNothing);
+                try
+                {
+#if DISKWEFT_TEST
+                    if (BeforeShellDelete != null) BeforeShellDelete();
+#endif
+                    ShellDelete.Run(entry, permanent, operationOwner);
+                }
+                catch (OperationCanceledException) { cancelled = true; break; }
+                catch (Exception ex) { failure = ex.Message; break; }
             }
-            catch (Exception ex) { Error(ex.Message); break; }
-        }
-        AfterChange(items, null);
+            foreach (var entry in entries) if (!Scanner.Exists(entry)) missing.Add(entry);
+        }, () =>
+        {
+            fileOperationActive = false; scanBtn.IsEnabled = true; SetBusy(false);
+            if (closing) return;
+            AfterChange(items, null, missing);
+            if (cancelled) status.Text = "File operation cancelled; reconciling affected folders.";
+            if (failure != null) Error(failure);
+        }, false, true, true);
     }
 
     void CopyMove(List<object> tags, bool move)
@@ -1632,13 +1709,13 @@ partial class MainUI
     }
 
     // After an operation: drop what disappeared, rescan what may have changed (source partially gone, destination inside the scan).
-    void AfterChange(IEnumerable<object> changed, string touchedDir)
+    void AfterChange(IEnumerable<object> changed, string touchedDir, HashSet<string> missing = null)
     {
         var rescan = new List<Node>();
         foreach (var t in changed)
         {
             if (PathOf(t) == null) continue; // e.g. the "N more smaller files" row
-            if (!Scanner.Exists(PathOf(t)))
+            if (missing != null ? missing.Contains(PathOf(t)) : !Scanner.Exists(PathOf(t)))
             {
                 var parent = t is Node ? ((Node)t).Parent : ((FileEntry)t).Dir;
                 Removed(t);

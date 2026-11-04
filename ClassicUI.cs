@@ -34,7 +34,7 @@ partial class MainUI
     internal static string[] DiagnosticDrivePaths;
 #endif
 
-    void RunOwned(Action work, Action completed, bool deepStack = false, bool ownsBusy = false)
+    void RunOwned(Action work, Action completed, bool deepStack = false, bool ownsBusy = false, bool sta = false)
     {
         ownedWorkers++;
         Exception failure = null;
@@ -58,6 +58,7 @@ partial class MainUI
                 }));
             }
         }, deepStack ? 256 * 1024 * 1024 : 1024 * 1024) { IsBackground = true };
+        if (sta) worker.SetApartmentState(ApartmentState.STA);
         worker.Start();
     }
 

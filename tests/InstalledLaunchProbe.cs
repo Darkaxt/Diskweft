@@ -19,7 +19,8 @@ class InstalledLaunchProbe
             try
             {
                 if(!args[0].Equals(@"C:\Program Files (x86)\Darkaxt\Diskweft\Diskweft.exe",StringComparison.OrdinalIgnoreCase)
-                    || !args[1].Equals(@"E:\Temp\Diskweft-release-verification-20261104\installed-fixture",StringComparison.OrdinalIgnoreCase))throw new Exception("Use the exact installed application and owned fixture.");
+                    || !(args[1].Equals(@"E:\Temp\Diskweft-release-verification-20261104\installed-fixture",StringComparison.OrdinalIgnoreCase)
+                         || args[1].Equals(@"E:\Temp\Diskweft-file-actions-resume-20261104\installed-fixture",StringComparison.OrdinalIgnoreCase)))throw new Exception("Use the exact installed application and owned fixture.");
                 var start=new ProcessStartInfo(args[0],"\""+args[1]+"\""){UseShellExecute=false};
                 opened=(sender,e)=>{
                     try {
@@ -33,7 +34,12 @@ class InstalledLaunchProbe
                 process.Exited+=(s,e)=>{windowReady.Set();finished.Set();};
                 if(!process.WaitForInputIdle())throw new Exception("Actual application exited before input-idle.");
                 process.Refresh();
-                if(process.MainWindowHandle!=IntPtr.Zero){root=AutomationElement.FromHandle(process.MainWindowHandle);windowReady.Set();}
+                // A first-run notes window can become Process.MainWindowHandle.
+                // Bind the actual owned application window by PID and title.
+                root=AutomationElement.RootElement.FindFirst(TreeScope.Children,new AndCondition(
+                    new PropertyCondition(AutomationElement.ProcessIdProperty,process.Id),
+                    new PropertyCondition(AutomationElement.NameProperty,"Diskweft")));
+                if(root!=null)windowReady.Set();
                 // Input-idle may precede the first WPF window. Observe its real
                 // WindowOpened transition, with exit as the other terminal event.
                 windowReady.WaitOne();
@@ -52,7 +58,7 @@ class InstalledLaunchProbe
                 if(terminal==null || !terminal.StartsWith("COMPLETE",StringComparison.Ordinal) || !terminal.Contains("classic") || !terminal.Contains(args[1]))throw new Exception("Actual bare-path launch did not finish the requested scan: "+terminal);
                 int pid=process.Id;
                 Automation.RemoveAutomationPropertyChangedEventHandler(status,changed);changed=null;
-                if(!process.CloseMainWindow())throw new Exception("Owned application did not accept normal close.");
+                ((WindowPattern)root.GetCurrentPattern(WindowPattern.Pattern)).Close();
                 process.WaitForExit();
                 if(process.ExitCode!=0)throw new Exception("Actual installed application exited with "+process.ExitCode);
                 File.WriteAllText(args[2],new JavaScriptSerializer().Serialize(new{passed=true,pid=pid,actualExecutable=args[0],barePath=args[1],status=terminal,normalClose=true,exitCode=process.ExitCode,boundary="Actual installed EXE process; read-only UI Automation status; event-driven completion; normal owned-window close"}));
@@ -66,7 +72,9 @@ class InstalledLaunchProbe
                 {
                     process.Refresh();
                     if(process.MainWindowHandle==IntPtr.Zero){windowReady.WaitOne();process.Refresh();}
-                    process.CloseMainWindow();process.WaitForExit();
+                    if(root!=null)((WindowPattern)root.GetCurrentPattern(WindowPattern.Pattern)).Close();
+                    else process.CloseMainWindow();
+                    process.WaitForExit();
                 }
                 if(opened!=null)Automation.RemoveAutomationEventHandler(WindowPattern.WindowOpenedEvent,AutomationElement.RootElement,opened);
             }

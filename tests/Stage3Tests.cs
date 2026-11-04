@@ -364,6 +364,7 @@ class Stage3Tests
         Environment.SetEnvironmentVariable("DISKWEFT_TEST_ROOT",Path.Combine(output,"profile"));
         try
         {
+            if(args.Contains("--file-actions")){FileActionTests.Run(output,args);return 0;}
             if(args.Contains("--release-notes")){ReleaseNotes();return 0;}
             if(args.Contains("--live-sort")){LiveSort();return 0;}
             if(args.Contains("--caption")){Caption();return 0;}

@@ -1,6 +1,6 @@
 # Diskweft specification
 
-Version 0.8 - 2026-11-04. Owner: Darkaxt.
+Version 0.9 - 2026-11-04. Owner: Darkaxt.
 
 This is the authoritative specification. The implementation plan cannot weaken
 its behavior, constraints or acceptance criteria. The user's standing engineering
@@ -53,6 +53,29 @@ its repository or installed settings. S5 inventories Pathweft's caller for
 awareness but does not change it; the user explicitly owns that integration.
 
 ## 2. Sources and design authority
+
+Maintenance request 2026-11-04: recycling a folder below AppData/Local/Tools
+temporarily locked the app; a subsequent Copy path placed text successfully but
+raised CLIPBRD_E_CANT_OPEN from WPF Clipboard.Flush. Preserve completed S0-S5
+delivery evidence; the maintenance workflow below owns the new correction.
+
+- FIX-01: Run recycle/permanent-delete filesystem work on an owned STA worker,
+  preserving explicit confirmation, cancellation, errors, busy guards and normal
+  close/worker drainage. Keep the dispatcher available while the operation runs;
+  reconcile deleted rows/totals and rescan only affected subtrees through the
+  existing asynchronous scanner. Never repeat an uncertain destructive action.
+  Use the Windows Shell directly: the inherited Visual Basic API ignores its
+  recycle option in noninteractive contexts. Verify actual bin entry, not just
+  disappearance. An unsupported/failed recycle must not silently become a
+  permanent-delete fallback.
+- FIX-02: Copy path writes immediate Unicode clipboard data, without WPF's
+  delayed OLE flush step. Preserve multiline/Unicode paths and data after app
+  exit. Genuine clipboard acquisition failures report locally without reaching
+  the crash handler, retries, sleeps or changing another app's clipboard state.
+- FIX-DELIVERY: Verify these complete native workflows in the owned disposable
+  guest, applicable scanner/UI/package regressions and normal-build hook absence;
+  publish and independently verify normal v0.1.2, then update the authorized local
+  installation while preserving user profile/history and Pathweft exclusion.
 
 | Source | Pin / role |
 | --- | --- |
