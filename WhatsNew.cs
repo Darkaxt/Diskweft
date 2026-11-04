@@ -83,9 +83,9 @@ class WhatsNew
         {
             Title = "What’s new — Diskweft", Width = 1240, Height = 720, MinWidth = 700, MinHeight = 420, // room for the list and a 960 x 170 banner
             Owner = owner, WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false,
-            Background = Brand.Ground, Foreground = Brand.Text, FontFamily = new FontFamily("Segoe UI"), FontSize = 13.5, UseLayoutRounding = true,
+            Background = Brand.Ground, Foreground = Brand.Text, FontFamily = new FontFamily("Segoe UI"), FontSize = 14, UseLayoutRounding = true,
         };
-        window.SourceInitialized += delegate { MainUI.Dwm(new System.Windows.Interop.WindowInteropHelper(window).Handle, 20, 1); }; // dark title bar
+        Appearance.Attach(window);
         window.PreviewKeyDown += (s, e) =>
         {
             if (e.Key == Key.Escape) window.Close();
@@ -125,11 +125,11 @@ class WhatsNew
             if (m != month)
             {
                 month = m;
-                nav.Children.Add(new TextBlock { Text = m, FontSize = 11.5, Foreground = Brand.Dim, Margin = new Thickness(8, nav.Children.Count == 0 ? 0 : 12, 0, 4) });
+                nav.Children.Add(new TextBlock { Text = m, FontSize = 12, Foreground = Brand.Dim, Margin = new Thickness(8, nav.Children.Count == 0 ? 0 : 12, 0, 4) });
             }
             int index = i;
             var row = new DockPanel { Width = 160 }; // the button's template centres its content: the row spans it
-            var when = new TextBlock { Text = i == 0 ? "Latest" : r.Date.ToString("d MMM", CultureInfo.InvariantCulture), FontSize = 11.5, Foreground = Brand.Dim, VerticalAlignment = VerticalAlignment.Center };
+            var when = new TextBlock { Text = i == 0 ? "Latest" : r.Date.ToString("d MMM", CultureInfo.InvariantCulture), FontSize = 12, Foreground = Brand.Dim, VerticalAlignment = VerticalAlignment.Center };
             DockPanel.SetDock(when, Dock.Right);
             row.Children.Add(when);
             row.Children.Add(new TextBlock { Text = r.Version, VerticalAlignment = VerticalAlignment.Center });
@@ -140,7 +140,8 @@ class WhatsNew
         }
     }
 
-    static readonly Brush Selected = new SolidColorBrush(Color.FromArgb(0x2B, 0x4C, 0x8D, 0xFF)), Body = new SolidColorBrush(Color.FromRgb(0xD6, 0xDE, 0xEA));
+    static Brush Selected { get { return Appearance.Brush("AccentSoft"); } }
+    static Brush Body { get { return Brand.Text; } }
 
     void Show(int i)
     {

@@ -41,7 +41,7 @@ try {
     $assembly = [Reflection.Assembly]::LoadFile($exe)
     $flags = [Reflection.BindingFlags]'Static,NonPublic,Public,Instance'
     $ui = $assembly.GetType('MainUI')
-    if ($ui.GetMethod('DiagnosticScan', $flags) -or $ui.GetField('DiagnosticDrivePaths', $flags) -or $assembly.GetType('ScanSession').GetField('Enumerated', $flags) -or $assembly.GetType('Mft').GetField('RecordsObserved', $flags) -or $assembly.GetType('Mft').GetMethod('ReplayRecords', $flags)) {
+    if ($ui.GetMethod('DiagnosticScan', $flags) -or $ui.GetField('DiagnosticDrivePaths', $flags) -or $assembly.GetType('ScanSession').GetField('Enumerated', $flags) -or $assembly.GetType('Mft').GetField('RecordsObserved', $flags) -or $assembly.GetType('Mft').GetMethod('ReplayRecords', $flags) -or $assembly.GetType('Appearance').GetField('SystemOverride', $flags)) {
         throw 'Test actions/barriers leaked into the normal build.'
     }
     $eco = $assembly.GetType('Ecosystem')

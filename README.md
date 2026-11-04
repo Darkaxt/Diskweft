@@ -2,13 +2,14 @@
 
 A Windows disk-usage explorer forked from
 [SpaceScan](https://github.com/limburatorul/spacescan), with progressive scan
-results and planned Windows 11 appearance. The name complements
+results and Windows 11 appearance. The name complements
 [Pathweft](https://github.com/Darkaxt/Pathweft), a separate file-manager project.
 
-**Development status:** S0-S2 are COMPLETE. Independent identity and progressive
+**Development status:** S0-S3 are COMPLETE. Independent identity and progressive
 classic/MFT scanning are implemented and verified, including real elevated NTFS.
-S3-S5 are NOT STARTED. Windows theming remains planned.
-The internal build is `0.0.2-stage2-development`; there is no
+Windows themes, accent settings and native layout verification passed;
+see the [S3 evidence](docs/verification/S3-WINDOWS-APPEARANCE.md).
+S4-S5 are NOT STARTED. The internal build is `0.0.3-stage3-development`; there is no
 Diskweft product release yet. S4 owns final delivery; S5 owns the planned system
 replacement of installed SpaceScan after that verified release.
 

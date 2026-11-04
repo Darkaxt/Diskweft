@@ -3,8 +3,8 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative. Maintain stage status
 and requirement reconciliation in `docs/IMPLEMENTATION-PLAN.md`.
 
-- The user authorized completion through S5 on 2026-11-04. S0-S2 are COMPLETE;
-  no stage is ACTIVE and S3-S5 remain NOT STARTED. Continue through the remaining
+- The user authorized completion through S5 on 2026-11-04. S0-S3 are COMPLETE;
+  S4-S5 remain NOT STARTED. Continue through the remaining
   authorized stages, closing each before advancing.
   S4 owns final release; S5 owns the authorized installed-system replacement.
 - Keep at most one ACTIVE stage. Validate complete specified workflows rather

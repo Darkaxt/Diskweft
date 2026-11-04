@@ -11,7 +11,7 @@ Updated: 2026-11-04. Current authorization: complete through S5,
 | S0 - Fork, specification and reproducible baseline | COMPLETE | Public named fork, owned checkout, complete requirements/stage map, inspected baseline build/scanner evidence and published setup documents | ENV-01..04 |
 | S1 - Independent identity and classic live scanning | COMPLETE | Real folder/UNC scan -> consistent live tree/statistics -> navigation -> correct terminal result, with independent Diskweft identities | ID-01; SCAN-01,03..07 for classic; COMPAT-01 for affected classic paths |
 | S2 - Progressive NTFS/MFT scanning | COMPLETE | Real volume -> progressive resolved folders/statistics -> navigation -> final result; safe fallback and all-drives integration | SCAN-02; SCAN-03..07 for MFT/mixed scans; affected COMPAT-01, VERIFY-01 |
-| S3 - Windows 11 appearance and accents | NOT STARTED | Native light/dark/high-contrast UI, Appearance persistence and live accent/theme changes across completed scan workflows | UI-01..04 |
+| S3 - Windows 11 appearance and accents | COMPLETE | Native light/dark/high-contrast UI, Appearance persistence and live accent/theme changes across completed scan workflows | UI-01..04 |
 | S4 - Integrated verification and final delivery | NOT STARTED | Full specification reconciliation, compatibility/performance evidence, verified final commit and independently retrieved normal release | PERF-01, VERIFY-01, DELIVER-01; integrated ID/SCAN/UI/COMPAT acceptance |
 | S5 - Replace installed SpaceScan with Diskweft | NOT STARTED | Verified Diskweft installation and preserved data, existing SpaceScan launch/integration routes replaced, rollback proved and obsolete owned registrations retired | MIGRATE-01 |
 
@@ -31,8 +31,8 @@ advance sequentially only after the current stage meets its acceptance criteria.
 | ENV-04 | Complete mapping, design/verification contract, development notes, actual evidence, private reference handling and scratch cleanup | PASS: committed/published documents and helpers read back; all requirements assigned; private reference ignored; fixture/preflight cleanup applied |
 
 S0 reconciliation: ENV-01..04 satisfied and verified. No remaining S0 acceptance
-criteria, blockers or tracked deferrals. S0-S2 are COMPLETE; no stage is ACTIVE.
-S3-S5 remain NOT STARTED.
+criteria, blockers or tracked deferrals. S0-S3 are COMPLETE.
+S4-S5 remain NOT STARTED.
 Evidence: [S0 baseline](verification/S0-BASELINE.md).
 
 ## S1 current reconciliation
@@ -64,7 +64,19 @@ record regressions cover ordering, late exclusions, unresolved provenance,
 extent correction and same-numbered records across volumes. Classic/UNC and
 normal-build identity/CLI regression passed. See
 [S2 verification](verification/S2-PROGRESSIVE-MFT.md). No remaining S2 acceptance
-criteria, blockers or tracked deferrals. No S3 work has begun.
+criteria, blockers or tracked deferrals. S3 now owns appearance acceptance.
+
+S3 reconciliation: UI-01..04 PASS. Real native Settings, light/dark/accent/high
+contrast, keyboard focus, live HWND notifications, restart persistence, measured
+client layouts and real WPF DPI transforms passed. Existing native classic
+navigation/scroll/history and normal CLI/identity regression passed. See
+[S3 evidence and coverage limits](verification/S3-WINDOWS-APPEARANCE.md).
+No remaining S3 criteria, blockers or tracked deferrals. The owned guest exited
+and its Coordinator lease was released. After retaining required evidence,
+cleanup transaction `29e0594183ec4d4e47dc96cb2ee3218e` applied signed manifest
+`0194e86403d0189c7eda006441ececbb231a967aaf672dfe99f17e16821f9b95`:
+711 members / 26,475,359 logical bytes removed with no errors/exclusions/residuals.
+Exact E: test and D: native-build roots were confirmed absent. S4/S5 have not begun.
 
 ### S1 - Independent identity and classic live scanning
 
@@ -166,3 +178,8 @@ explicit. Pending exclusion names are reread from compact record references;
 failed attempts have one explicit replacement transition. No material required
 consolidation obstructs S3. S4 still owns complete performance qualification and
 final package verification; no intermediate product release was created.
+
+S3 closure assessment: Appearance owns palette/lifetime changes and existing WPF
+views share dynamic resources. Native caption and capability-checked solid
+surfaces replace the inherited decorative glass path. No competing state owner,
+framework migration or required consolidation obstructs S4.

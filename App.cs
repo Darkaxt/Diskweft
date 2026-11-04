@@ -25,9 +25,9 @@ using WinForms = System.Windows.Forms;
 [assembly: System.Reflection.AssemblyProduct("Diskweft")]
 [assembly: System.Reflection.AssemblyCompany("Darkaxt")]
 [assembly: System.Reflection.AssemblyCopyright("MIT; Protagonist Labs and Darkaxt")]
-[assembly: System.Reflection.AssemblyVersion("0.0.2")]
-[assembly: System.Reflection.AssemblyFileVersion("0.0.2")]
-[assembly: System.Reflection.AssemblyInformationalVersion("0.0.2-stage2-development")]
+[assembly: System.Reflection.AssemblyVersion("0.0.3")]
+[assembly: System.Reflection.AssemblyFileVersion("0.0.3")]
+[assembly: System.Reflection.AssemblyInformationalVersion("0.0.3-stage3-development")]
 
 // The folder the Protagonist Labs apps share on this PC (%APPDATA%\ProtagonistLabs): each app writes its card in
 // apps\, and what it offers the others in data\. Diskweft writes its card, and reads Shelf's games, to name their
@@ -330,15 +330,12 @@ static class Updater
 
 static class Brand
 {
-    public static readonly Brush Text = Make("#e8eef6"), Dim = Make("#8a97aa"), Dimmer = Make("#5d6879");
-    public static readonly Brush Accent = Make("#4c8dff"), Pink = Make("#ff5c8a"), Ground = Make("#0a0d13");
-
-    static Brush Make(string hex)
-    {
-        var b = (SolidColorBrush)new BrushConverter().ConvertFromString(hex);
-        b.Freeze();
-        return b;
-    }
+    public static Brush Text { get { return Appearance.Brush("Text"); } }
+    public static Brush Dim { get { return Appearance.Brush("Dim"); } }
+    public static Brush Dimmer { get { return Appearance.Brush("Dimmer"); } }
+    public static Brush Accent { get { return Appearance.Brush("Accent"); } }
+    public static Brush Pink { get { return Appearance.Brush("Danger"); } }
+    public static Brush Ground { get { return Appearance.Brush("Ground"); } }
 
     public static string Fmt(long b) { return global::Fmt.Size(b); }
 
@@ -527,12 +524,6 @@ partial class MainUI
 {
     const int MaxFilesShown = 1000;
 
-    [DllImport("dwmapi.dll")]
-    static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
-    [DllImport("dwmapi.dll")]
-    static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref MARGINS m);
-    struct MARGINS { public int Left, Right, Top, Bottom; }
-
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     struct SHELLEXECUTEINFO
     {
@@ -652,7 +643,6 @@ partial class MainUI
         progress = Find<Border>("progress");
         menu = (ContextMenu)Window.Resources["RowMenu"];
 
-        Window.SourceInitialized += delegate { ApplyGlass(); };
         treeList.ItemsSource = rows;
 
         var drivesBtn = Find<Button>("drivesBtn");
@@ -660,18 +650,6 @@ partial class MainUI
         var first = DriveInfo.GetDrives().FirstOrDefault(d => d.IsReady);
         if (first != null) pathBox.Text = first.Name;
         emptyState = Find<FrameworkElement>("emptyState");
-        // With the content running under the title bar, a maximized window overhangs the screen by the frame width.
-        var maxBtn = Find<Button>("maxBtn");
-        Window.StateChanged += delegate
-        {
-            bool max = Window.WindowState == WindowState.Maximized;
-            Window.BorderThickness = new Thickness(max ? 8 : 0);
-            maxBtn.Content = max ? "" : ""; // restore / maximize glyphs
-        };
-        Find<Button>("minBtn").Click += delegate { SystemCommands.MinimizeWindow(Window); };
-        maxBtn.Click += delegate { if (Window.WindowState == WindowState.Maximized) SystemCommands.RestoreWindow(Window); else SystemCommands.MaximizeWindow(Window); };
-        Find<Button>("closeBtn").Click += delegate { Window.Close(); };
-
         ConfigureLifetime();
         scanBtn.Click += delegate { StartOrStop(); };
         pathBox.KeyDown += (s, e) => { if (e.Key == Key.Enter) { e.Handled = true; StartOrStop(); } };
@@ -736,6 +714,7 @@ partial class MainUI
         dupSize.KeyDown += (s, e) => { if (e.Key == Key.Enter) { e.Handled = true; RunDupes(); } };
         Window.PreviewKeyDown += (s, e) =>
         {
+            if (e.Key==Key.Escape && excludePopup.IsOpen) { excludePopup.IsOpen=false; excludeBtn.Focus(); e.Handled=true; return; }
             if (e.Key != Key.F || (Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
             tabSearch.IsChecked = true;
             findName.Focus();
@@ -792,6 +771,7 @@ partial class MainUI
 
         Find<Button>("elevateBtn").Click += delegate { RestartElevated(); };
         status.Text = "Ready";
+        ConfigureAppearance();
         if (startPath != null)
         {
             pathBox.Text = startPath;
@@ -836,23 +816,6 @@ partial class MainUI
         }
         m.IsOpen = true;
     }
-
-    // Acrylic through DWM (Win11 22H2+). WPF composes with alpha, so the desktop shows through the translucent layers.
-    // Anywhere it isn't available (older Windows, Windows Server 2019/2022) the window keeps its opaque ground.
-    void ApplyGlass()
-    {
-        var h = new WindowInteropHelper(Window).Handle;
-        HwndSource.FromHwnd(h).CompositionTarget.BackgroundColor = Colors.Transparent; // default is opaque black: partial alpha would go dark
-        Dwm(h, 20, 1);          // dark title bar
-        Dwm(h, 33, 2);          // rounded corners
-        Dwm(h, 34, 0x00362B26); // border color #262b36 (0x00BBGGRR)
-        Dwm(h, 36, 0x00F6EEE8); // caption text #e8eef6
-        var m = new MARGINS { Left = -1, Right = -1, Top = -1, Bottom = -1 };
-        bool glass = DwmExtendFrameIntoClientArea(h, ref m) == 0 && Dwm(h, 38, 3 /*acrylic*/) == 0;
-        Window.Background = glass ? Brushes.Transparent : Brand.Ground;
-    }
-
-    internal static int Dwm(IntPtr h, int attr, int value) { return DwmSetWindowAttribute(h, attr, ref value, 4); }
 
     void Error(string msg) { MessageBox.Show(Window, msg, "Diskweft", MessageBoxButton.OK, MessageBoxImage.Error); }
 
@@ -1076,7 +1039,7 @@ partial class MainUI
 
     static TextBlock WorksWithLine(StackPanel panel)
     {
-        var line = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 11.5, Foreground = Brand.Dim, Margin = new Thickness(0, 6, 0, 0) };
+        var line = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 12, Foreground = Brand.Dim, Margin = new Thickness(0, 6, 0, 0) };
         panel.Children.Add(line);
         return line;
     }
@@ -1493,7 +1456,7 @@ partial class MainUI
     {
         long total = root == null ? 0 : root.Size;
         bool cats = byCat.IsChecked == true;
-        extSort.Label("name", cats ? "CATEGORY" : "EXTENSION");
+        extSort.Label("name", cats ? "Category" : "Extension");
         var groups = cats
             ? Categories.Group(scanSession != null ? displayExtensions : Stats.Ext)
             : (scanSession != null ? displayExtensions : Stats.Ext).Where(kv => kv.Value[1] > 0).OrderByDescending(kv => kv.Value[0]).ToList();

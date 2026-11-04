@@ -35,6 +35,7 @@ Name: "shellmenu"; Description: "Add Scan with Diskweft to folder and drive cont
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"; Flags: unchecked
 [Files]
 Source: "{#BuildRoot}\Diskweft.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#BuildRoot}\Diskweft.exe.config"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\Diskweft.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]

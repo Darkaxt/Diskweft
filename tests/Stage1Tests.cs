@@ -18,6 +18,21 @@ using System.Text;
 
 class Stage1Tests
 {
+    // Reuse the complete native workflow in a disconnected guest when only UI
+    // regressions are affected; this makes no UNC or unprivileged-MFT claim.
+    internal static void NativeRegression(string workRoot,string resultRoot)
+    {
+        output=Path.GetFullPath(workRoot);Directory.CreateDirectory(output);
+        Environment.SetEnvironmentVariable("DISKWEFT_TEST_ROOT",Path.Combine(output,"profile"));
+        fixture=Prepare(output);
+        string many=Path.Combine(output,"many");Directory.CreateDirectory(many);
+        for(int i=0;i<2100;i++)File.WriteAllBytes(Path.Combine(many,i+".bin"),new byte[0]);
+        Directory.CreateDirectory(Path.Combine(output,"other-root"));
+        NativeUi();
+        foreach(string file in new[]{"classic-scrolled.png","classic-scrolled.json","classic-all-roots.json"})
+            File.Copy(Path.Combine(output,file),Path.Combine(resultRoot,file));
+        File.WriteAllText(Path.Combine(resultRoot,"result.json"),new JavaScriptSerializer().Serialize(new {passed=true,scope="native classic UI regression only",evidence,partialDisplayMilliseconds}));
+    }
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     static extern bool CreateDirectoryW(string path, IntPtr security);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]

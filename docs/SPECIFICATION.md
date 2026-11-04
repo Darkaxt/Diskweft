@@ -20,7 +20,7 @@ independent identity and complete classic live-scanning workflow, including its
 integration, verification, commit and source synchronization. S1 is COMPLETE.
 The 2026-11-04 instruction, "You may start working on this all the way in",
 authorizes completing S2-S5, including final release and system replacement.
-S2 is COMPLETE; S3-S5 remain NOT STARTED. No intermediate product release is
+S0-S3 are COMPLETE and S4-S5 remain NOT STARTED. No intermediate product release is
 authorized. The standing final-release rule applies in S4 after the whole
 product scope and its prerequisite verification pass.
 
@@ -47,7 +47,7 @@ does not authorize unrelated Pathweft development.
 | Pathweft | `Darkaxt/Pathweft`; remote main observed at `b8c75278c74ce5a7728affa60ef9ef327dbcae3d`; naming/design context only |
 | User Explorer screenshot | Private retained visual reference; contains personal paths/account names and must not be committed |
 | Windows design | [Color](https://learn.microsoft.com/en-us/windows/apps/design/signature-experiences/color), [DWM attributes](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute), [system backdrop](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwm_systembackdrop_type) |
-| Huashu | Installed 3.0.0 guidance, read with local runtime and design-context references; subordinate to Windows/user requirements |
+| Huashu | S0 used installed 3.0.0; S3 uses installed 3.1.0 local revision 2026-11-03.1 with local integration, frontend quality, web/app and design-context guidance; subordinate to Windows/user requirements |
 
 Recheck relevant upstream drift before adoption or final packaging. Do not blindly
 replace fork changes. Keep attribution and pin any imported dependency. The
@@ -147,6 +147,18 @@ Primary tested OS is Windows 11. Preserve existing .NET Framework portability
 and capability-check new Windows APIs; do not advertise untested older Windows
 versions as verified. Native materials are an enhancement; readable theming is
 required regardless of compositor availability.
+
+S3 implementation decision (within the supplied Windows direction): restore the
+native Windows caption/snap/resize behavior, use solid neutral content surfaces
+(`#191919` dark / white light) with slightly raised neutral command/header areas,
+Segoe UI at 14 DIP, 30 DIP rows and 4 DIP control corners. Remove inherited glow,
+gradient and pill decoration. Keep the dense scan table as the primary region.
+Appearance lives in the existing scrollable Settings surface, with explicit
+Apply and inline invalid-color feedback. Native OS file/folder dialogs retain
+Windows' own appearance; application-owned windows, settings and menus use the
+app's resolved palette. System contrast colors override app customizations.
+Track real Windows preference messages on each owned window; apply visual changes
+on its dispatcher without starting/restarting scans or changing OS preferences.
 
 ## 7. Verification, delivery and scope boundaries
 
