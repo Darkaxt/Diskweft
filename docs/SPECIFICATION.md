@@ -1,6 +1,6 @@
 # Diskweft specification
 
-Version 0.3 - 2026-10-30. Owner: Darkaxt.
+Version 0.4 - 2026-11-04. Owner: Darkaxt.
 
 This is the authoritative specification. The implementation plan cannot weaken
 its behavior, constraints or acceptance criteria. The user's standing engineering
@@ -17,14 +17,17 @@ scan-specific elements where Windows conventions do not supply an answer.
 The initial 2026-10-30 request established the specification and S0. S0 is
 COMPLETE. The subsequent user instruction, "Start stage 1", authorizes S1's
 independent identity and complete classic live-scanning workflow, including its
-integration, verification, commit and source synchronization. **The current
-execution boundary is S1 only.** S2-S5 remain NOT STARTED; no intermediate product
-release is authorized. The standing final-release rule applies in S4 after the
-whole product scope and its prerequisite verification pass.
+integration, verification, commit and source synchronization. S1 is COMPLETE.
+The 2026-11-04 instruction, "You may start working on this all the way in",
+authorizes completing S2-S5, including final release and system replacement.
+S2 is COMPLETE; S3-S5 remain NOT STARTED. No intermediate product release is
+authorized. The standing final-release rule applies in S4 after the whole
+product scope and its prerequisite verification pass.
 
 The user subsequently requested a Stage 5 to replace SpaceScan in the system
 with this fork. This adds the post-release migration requirement MIGRATE-01 and
-authorizes documenting its stage now. It does not start the migration during S1.
+initially authorized documenting its stage. The 2026-11-04 instruction authorizes
+its execution after S4; it does not move migration work into S2.
 S4 remains the final product release; S5 owns the separately requested system
 replacement after that release has been delivered and verified.
 

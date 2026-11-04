@@ -1,14 +1,14 @@
 # Diskweft
 
 A Windows disk-usage explorer forked from
-[SpaceScan](https://github.com/limburatorul/spacescan), with planned progressive
-scan results and Windows 11 appearance. The name complements
+[SpaceScan](https://github.com/limburatorul/spacescan), with progressive scan
+results and planned Windows 11 appearance. The name complements
 [Pathweft](https://github.com/Darkaxt/Pathweft), a separate file-manager project.
 
-**Development status:** S0 and S1 are COMPLETE. S1's independent identity and
-classic live scanning are implemented, verified and published as source.
-S2-S5 are NOT STARTED. Progressive MFT results and Windows theming are not yet
-implemented. The internal build is `0.0.1-stage1-development`; there is no
+**Development status:** S0-S2 are COMPLETE. Independent identity and progressive
+classic/MFT scanning are implemented and verified, including real elevated NTFS.
+S3-S5 are NOT STARTED. Windows theming remains planned.
+The internal build is `0.0.2-stage2-development`; there is no
 Diskweft product release yet. S4 owns final delivery; S5 owns the planned system
 replacement of installed SpaceScan after that verified release.
 
@@ -25,6 +25,8 @@ remain compatibility requirements.
 Classic scans now publish live folder totals/statistics, allow navigation while
 running and preserve partial/cancelled provenance. See the
 [S1 verification and native rendering](docs/verification/S1-CLASSIC-LIVE.md).
+MFT scans now also publish resolved folders during reading; see the
+[S2 real-volume verification](docs/verification/S2-PROGRESSIVE-MFT.md).
 Build with `scripts/Build-Development.ps1`; current development output is isolated
 from SpaceScan. Do not use the inherited instructions below as a fork release
 procedure.

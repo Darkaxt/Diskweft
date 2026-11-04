@@ -3,9 +3,10 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative. Maintain stage status
 and requirement reconciliation in `docs/IMPLEMENTATION-PLAN.md`.
 
-- The user authorized S1 on 2026-10-30. S0 and S1 are COMPLETE; no stage is ACTIVE.
-  S2-S5 remain NOT STARTED. S1 source/evidence are published and independently
-  verified. Do not start another stage or publish an intermediate product release.
+- The user authorized completion through S5 on 2026-11-04. S0-S2 are COMPLETE;
+  no stage is ACTIVE and S3-S5 remain NOT STARTED. Continue through the remaining
+  authorized stages, closing each before advancing.
+  S4 owns final release; S5 owns the authorized installed-system replacement.
 - Keep at most one ACTIVE stage. Validate complete specified workflows rather
   than treating individual components or passing tests as delivered features.
 - Preserve upstream history and MIT attribution. `origin` is Darkaxt/Diskweft;

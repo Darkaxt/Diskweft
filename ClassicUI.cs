@@ -12,6 +12,7 @@ partial class MainUI
 {
     ScanSession scanSession;
     long generation, lastRenderedRevision;
+    int renderedAttempt;
     readonly DispatcherTimer liveResults = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
     bool rescanActive, closing;
     string priorOutcome = "complete";
@@ -103,7 +104,7 @@ partial class MainUI
         foreach (var request in listings.Values) request.Cancelled = true;
         listings.Clear();
         dirCache.Clear(); // query results must resolve against this scan generation
-        generation++; lastRenderedRevision = 0;
+        generation++; lastRenderedRevision = 0; renderedAttempt = 0;
         long owner = generation;
         rescanActive = partial;
         priorOutcome = partial && root != null ? root.Outcome : "complete";
@@ -153,6 +154,16 @@ partial class MainUI
         var batch = scanSession.Drain();
         if (batch == null || batch.Revision <= lastRenderedRevision) return;
         lastRenderedRevision = batch.Revision;
+        if (renderedAttempt != batch.Attempt || batch.RemovedPaths.Count > 0)
+        {
+            foreach (var request in listings.Values) request.Cancelled = true;
+            listings.Clear(); renderedAttempt = batch.Attempt;
+            var removed = new HashSet<Node>(displayNodes.Where(kv => batch.RemovedPaths.Contains(kv.Key)).Select(kv => kv.Value));
+            foreach (var row in rows.Where(r => r.Node != null ? removed.Contains(r.Node) : removed.Contains(r.File.Dir)).ToList()) rows.Remove(row);
+            foreach (var node in removed) { if (node.Parent != null) node.Parent.Dirs.Remove(node); directoryRows.Remove(node); }
+            foreach (string path in batch.RemovedPaths) displayNodes.Remove(path);
+            if (treeList.SelectedItem == null && rows.Count > 0) treeList.SelectedItem = rows[0];
+        }
         var touchedParents = new HashSet<Node>();
         foreach (var update in batch.Directories.Values)
         {

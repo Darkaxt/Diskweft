@@ -25,9 +25,9 @@ using WinForms = System.Windows.Forms;
 [assembly: System.Reflection.AssemblyProduct("Diskweft")]
 [assembly: System.Reflection.AssemblyCompany("Darkaxt")]
 [assembly: System.Reflection.AssemblyCopyright("MIT; Protagonist Labs and Darkaxt")]
-[assembly: System.Reflection.AssemblyVersion("0.0.1")]
-[assembly: System.Reflection.AssemblyFileVersion("0.0.1")]
-[assembly: System.Reflection.AssemblyInformationalVersion("0.0.1-stage1-development")]
+[assembly: System.Reflection.AssemblyVersion("0.0.2")]
+[assembly: System.Reflection.AssemblyFileVersion("0.0.2")]
+[assembly: System.Reflection.AssemblyInformationalVersion("0.0.2-stage2-development")]
 
 // The folder the Protagonist Labs apps share on this PC (%APPDATA%\ProtagonistLabs): each app writes its card in
 // apps\, and what it offers the others in data\. Diskweft writes its card, and reads Shelf's games, to name their

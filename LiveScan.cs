@@ -26,6 +26,8 @@ sealed class ScanBatch
     public Dictionary<string, long[]> Extensions = new Dictionary<string, long[]>();
     public List<FileUpdate> Largest = new List<FileUpdate>();
     public long Revision;
+    public int Attempt;
+    public HashSet<string> RemovedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     public bool Terminal;
     public string Outcome, Error, Mode;
 }
@@ -41,7 +43,7 @@ sealed class ScanSession
     readonly List<Node> known = new List<Node>();
     readonly Stopwatch clock = Stopwatch.StartNew();
     long lastPublish, revision;
-    int entries;
+    int entries, attempt;
     public readonly string[] Paths;
     public readonly bool VirtualRoot, PreferMft;
     public Node Root;
@@ -108,6 +110,7 @@ sealed class ScanSession
             pending.Extensions = extensions; pending.Largest = largest;
             pending.Revision = ++revision; pending.Terminal = terminal;
             pending.Outcome = Outcome; pending.Error = Error; pending.Mode = Mode;
+            pending.Attempt = attempt;
         }
         lastPublish = clock.ElapsedMilliseconds;
 #if DISKWEFT_TEST
@@ -115,11 +118,28 @@ sealed class ScanSession
         if (observer != null) observer(this, current);
 #endif
     }
-    void Import(Node node)
+    public void Forget(IEnumerable<Node> nodes)
     {
-        node.State = DirectoryState.Complete; known.Add(node); dirty.Add(node);
-        foreach (var child in node.Dirs) Import(child);
+        foreach (var node in nodes)
+        {
+            string path = node.FullPath;
+            known.Remove(node); dirty.Remove(node); directDeltas.Remove(node);
+            lock (mailboxLock) { pending.Directories.Remove(path); pending.RemovedPaths.Add(path); }
+        }
     }
+    void ResetAttempt(Node node)
+    {
+        var descendants = known.Where(n => n != node && IsWithin(n, node)).ToList();
+        Forget(descendants);
+        for (var p = node.Parent; p != null; p = p.Parent) { p.Size -= node.Size; p.Files -= node.Files; dirty.Add(p); }
+        known.Remove(node); dirty.Remove(node); directDeltas.Remove(node);
+        node.Dirs.Clear(); node.DirectExt.Clear(); node.Size = node.Files = 0;
+        node.State = DirectoryState.Scanning; node.Outcome = "scanning";
+        attempt++;
+        RestorePublishedStatistics();
+    }
+    static bool IsWithin(Node node, Node ancestor)
+    { for (var p = node.Parent; p != null; p = p.Parent) if (p == ancestor) return true; return false; }
     public void Run()
     {
         Stats.Reset();
@@ -137,6 +157,7 @@ sealed class ScanSession
             foreach (string path in paths)
             {
                 if (CancellationRequested || Scanner.Cancel) break;
+                Scanner.FilesSeen = Scanner.Total = 0; Scanner.Current = path;
                 var node = new Node { Name = path, Parent = Root };
                 if (VirtualRoot) Root.Dirs.Add(node); else Root = node;
                 Node fast = null;
@@ -146,35 +167,34 @@ sealed class ScanSession
                 {
                     try
                     {
-                        fast = Mft.Scan(path);
+                        Mode = string.Join("; ", modes.Concat(new[] {path + " MFT - reading records; unresolved paths withheld"}));
+                        fast = Mft.ScanLive(path, this, node);
                         if (!Scanner.Cancel && MainUI.NothingFound(fast) != "") throw new IOException("MFT found no files on a drive in use");
-                        mode = "MFT (fast; final folder results)";
+                        mode = "MFT (progressive records)" + (fast.State == DirectoryState.Incomplete ? " - unresolved live records withheld" : "");
                     }
                     catch (Exception ex)
                     {
                         mode = "classic - MFT unavailable: " + ex.Message;
-                        // MFT has not published folders in S1. Restore seed/previous
-                        // roots' statistics, not abandoned attempt contributions.
-                        RestorePublishedStatistics();
+                        // Replace the failed source attempt, including any already
+                        // rendered directories and statistics, before classic starts.
+                        ResetAttempt(node);
                         Scanner.FilesSeen = Scanner.Total = 0;
                     }
                 }
                 modes.Add(path + " " + mode); Mode = string.Join("; ", modes);
                 if (fast != null)
                 {
-                    fast.Parent = VirtualRoot ? Root : null;
-                    if (VirtualRoot) { Root.Dirs[Root.Dirs.Count - 1] = fast; Root.Size += fast.Size; Root.Files += fast.Files; }
-                    else Root = fast;
-                    Import(fast);
+                    // The progressive MFT owns this same scan node and has already
+                    // propagated its contributions into the virtual parent.
                 }
                 else
                 {
-                    Discover(node); node.State = DirectoryState.Scanning; Changed(node); Publish(false, node);
+                    Discover(node); node.State = DirectoryState.Scanning; Changed(node); Publish(false, node, true);
                     Scanner.ScanLive(node, path, this);
                 }
                 Publish(false, node);
             }
-            Outcome = CancellationRequested || Scanner.Cancel ? "stopped" : Scanner.DeniedCount > 0 ? "incomplete" : "complete";
+            Outcome = CancellationRequested || Scanner.Cancel ? "stopped" : Scanner.DeniedCount > 0 || known.Any(n => n.State == DirectoryState.Incomplete) ? "incomplete" : "complete";
         }
         catch (Exception ex) { Outcome = "failed"; Error = ex.Message; }
         foreach (var node in known)

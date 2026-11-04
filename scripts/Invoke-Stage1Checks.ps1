@@ -9,8 +9,8 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $scratch = [IO.Path]::GetFullPath($ScratchRoot)
 $build = [IO.Path]::GetFullPath($BuildRoot)
-if (-not $scratch.StartsWith('E:\Temp\Diskweft-s1-', [StringComparison]::OrdinalIgnoreCase)) { throw 'Unexpected S1 scratch root.' }
-if (-not $build.StartsWith('D:\Temp\Diskweft-s1-build', [StringComparison]::OrdinalIgnoreCase)) { throw 'Unexpected S1 native build root.' }
+if ($scratch -notmatch '^E:\\Temp\\Diskweft-s[1-4]-[0-9]{8}$') { throw 'Unexpected Diskweft acceptance scratch root.' }
+if ($build -notmatch '^D:\\Temp\\Diskweft-s[1-4]-build(?:\\regression)?$') { throw 'Unexpected Diskweft native build root.' }
 [IO.Directory]::CreateDirectory($scratch) | Out-Null
 [IO.Directory]::CreateDirectory($build) | Out-Null
 $oldTemp = $env:TEMP; $oldTmp = $env:TMP; $oldNetwork = $env:DISKWEFT_NETWORK_FIXTURE

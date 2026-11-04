@@ -128,7 +128,8 @@ class Stage1Tests
         var subtree = new ScanSession(new[] { fixture }, false, false); subtree.Run();
         Check(subtree.Root.Size == 1500 && subtree.Root.Files == 2, "Path exclusion failed.");
         Exclude.Set(new string[0]);
-        var multiple = new ScanSession(new[] { fixture, Path.Combine(fixture, "empty") }, true, false); multiple.Run();
+        string otherRoot = Path.Combine(output, "other-root"); Directory.CreateDirectory(otherRoot);
+        var multiple = new ScanSession(new[] { fixture, otherRoot }, true, false); multiple.Run();
         Check(multiple.Root.Size == 7500 && multiple.Root.Files == 5 && multiple.Root.Dirs.Count == 2, "All-drives classic aggregation failed.");
         evidence.Add("Exact controlled totals, name/path exclusions and virtual all-drives classic aggregation verified.");
         string longPath = Path.Combine(output, "long");
@@ -379,12 +380,12 @@ class Stage1Tests
                 Check(staleListing && owner.DiagnosticRoot.Size == 10500 && owner.DiagnosticRoot.Files == 6, "Obsolete listing contaminated the new scan.");
                 MainUI.ListingObserved = null;
                 evidence.Add("A deliberately delayed old-generation file listing was discarded after a real Scan-button restart.");
-                phase = 6; owner.DiagnosticScanAll(new[] { fixture, Path.Combine(fixture, "empty") });
+                phase = 6; owner.DiagnosticScanAll(new[] { fixture, Path.Combine(output, "other-root") });
             }
             else if (phase == 6)
             {
-                Check(owner.DiagnosticRoot.Name == "This PC" && owner.DiagnosticRoot.Size == 10500 && owner.DiagnosticRoot.Dirs.Count == 2, "Native all-drives classic projection failed.");
                 owner.DiagnosticCapture(output, "classic-all-roots");
+                Check(owner.DiagnosticRoot.Name == "This PC" && owner.DiagnosticRoot.Size == 10500 && owner.DiagnosticRoot.Dirs.Count == 2, "Native all-drives classic projection failed: name="+owner.DiagnosticRoot.Name+", bytes="+owner.DiagnosticRoot.Size+", roots="+owner.DiagnosticRoot.Dirs.Count);
                 evidence.Add("The real Scan-all button projected controlled classic filesystem roots into the native This PC tree; host-wide scanning was not performed.");
                 MainUI.DiagnosticDrivePaths = null;
                 phase = 8; paused = false; release.Reset();

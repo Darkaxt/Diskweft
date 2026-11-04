@@ -35,6 +35,7 @@ class FileEntry
     public long Size;
     public long Modified;  // Windows file time, 0 when unknown
     public int ParentRec;  // MFT scan: parent record, resolved to Dir once the tree exists
+    public int Record;     // bounded MFT largest-file candidate identity
     public bool Summary;   // "... N smaller files" row, not a real file
 
     public string FullPath { get { return Scanner.Join(Dir.FullPath, Name); } }
@@ -292,7 +293,7 @@ static class Scanner
 
 // Fast path: reads the NTFS Master File Table directly (like WizTree / TreeSize Pro). Needs admin.
 // ponytail: ~30 bytes of RAM per MFT record (≈1 GB for 30M files); fine on 64-bit.
-class Mft
+partial class Mft
 {
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     static extern SafeFileHandle CreateFileW(string name, uint access, uint share, IntPtr sa, uint disposition, uint flags, IntPtr template);
@@ -305,7 +306,7 @@ class Mft
 
     const uint FSCTL_GET_NTFS_VOLUME_DATA = 0x00090064;
     const int RootRecord = 5, FirstUserRecord = 16;
-    const byte InUse = 1, IsDir = 2, GoodName = 4, Excluded = 8;
+    const byte InUse = 1, IsDir = 2, GoodName = 4, Excluded = 8, HasData = 16, PendingPath = 32;
 
     int recSize;
     long count;
@@ -327,6 +328,8 @@ class Mft
     }
 
     public static Node Scan(string root) { return new Mft().Run(root); }
+    public static Node ScanLive(string root, ScanSession session, Node node)
+    { return new Mft { publication = session, suppliedRoot = node }.Run(root); }
 
     // Finds files across a whole volume by re-reading the MFT: seconds even on a multi-TB drive.
     public static List<FileEntry> Collect(string root, Query q)
@@ -388,6 +391,7 @@ class Mft
             size = new long[count];
             flags = new byte[count];
             names = new string[count];
+            if (query == null) { recordReader = record => ReadLogicalRecord(h, runs, cluster, record); StartProgress(root); }
             Scanner.Total = count;
 
             int chunk = Math.Max(cluster, 4 << 20) / cluster * cluster;
@@ -401,13 +405,24 @@ class Mft
                     int n = (int)Math.Min(left, chunk);
                     Read(h, off, buf, n);
                     for (int i = 0; i + recSize <= n && rec < count; i += recSize, rec++)
+                    {
+                        if (Scanner.Cancel) break;
                         ParseRecord(buf, i, rec);
+                        if (progress != null && (rec & 255) == 0) progress.Checkpoint(false);
+                    }
                     off += n;
                     left -= n;
                     Scanner.FilesSeen = rec;
+#if DISKWEFT_TEST
+                    if (RecordsObserved != null) { if (progress != null) progress.Checkpoint(true); RecordsObserved(rec, publication); }
+#endif
                 }
             }
-            return BuildTree(root);
+            if (progress == null) return BuildTree(root);
+            if (!Scanner.Cancel)
+                FinalTop(recordReader);
+            progress.Finish(PendingCandidateCount());
+            return progress.Root;
         }
     }
 
@@ -533,6 +548,7 @@ class Mft
         long baseRef = BitConverter.ToInt64(b, o + 0x20) & 0xFFFFFFFFFFFF;
         long idx = baseRef != 0 ? baseRef : rec; // extension records carry attributes of their base record
         if (idx >= count) return;
+        var previous = progress == null ? new MftFile() : FileMeta((int)idx);
         if (baseRef == 0) flags[idx] |= (byte)(InUse | ((recFlags & 2) != 0 ? IsDir : 0));
 
         int nameV = -1;
@@ -556,12 +572,17 @@ class Mft
                 if (b[v + 0x41] != 2) // prefer long name over DOS 8.3 name
                 {
                     flags[idx] |= GoodName;
+                    if (progress != null) nameSource[idx] = (int)rec;
+                    if (dir && (BitConverter.ToUInt32(b, v + 0x38) & Scanner.REPARSE) != 0) flags[idx] |= Excluded;
                     if (Exclude.Any)
                     {
                         string entry = NameOf(b, v);
                         if (Exclude.MatchesName(entry)) flags[idx] |= Excluded;
                         else if (!dir && Exclude.AnyPaths && Exclude.LeafMatch(entry))
-                            excludeCandidates.Add(new KeyValuePair<long, string>(idx, entry)); // full path checked in BuildTree
+                        {
+                            if (progress != null) AddPathCandidate((int)idx, entry);
+                            else excludeCandidates.Add(new KeyValuePair<long, string>(idx, entry));
+                        }
                     }
                     nameV = v;
                     if (!dir && query == null) extId[idx] = ExtId(b, v);
@@ -569,19 +590,19 @@ class Mft
             }
             else if (type == 0x80 && b[a + 9] == 0) // unnamed $DATA (alternate streams ignored)
             {
-                if (resident) { size[idx] = BitConverter.ToUInt32(b, a + 0x10); sizeHere = true; }
-                else if (BitConverter.ToInt64(b, a + 0x10) == 0) { size[idx] = BitConverter.ToInt64(b, a + 0x30); sizeHere = true; } // first extent holds real size
+                if (resident) { size[idx] = BitConverter.ToUInt32(b, a + 0x10); sizeHere = true; flags[idx] |= HasData; }
+                else if (BitConverter.ToInt64(b, a + 0x10) == 0) { size[idx] = BitConverter.ToInt64(b, a + 0x30); sizeHere = true; flags[idx] |= HasData; } // first extent holds real size
             }
             a += len;
         }
 
-        if (baseRef != 0 || (recFlags & 2) != 0 || rec < FirstUserRecord || nameV < 0 || !sizeHere) return;
-        if (query == null)
+        if (progress != null)
         {
-            if (Stats.WantsTop(size[idx]))
-                Stats.AddTop(new FileEntry { ParentRec = parent[idx], Name = NameOf(b, nameV), Size = size[idx], Modified = modified });
+            UpdateProgress((int)idx, previous, nameV < 0 ? null : NameOf(b, nameV), modified);
+            return;
         }
-        else if (matches.Count < query.Max && query.MatchesMeta(size[idx], modified))
+        if (baseRef != 0 || (recFlags & 2) != 0 || rec < FirstUserRecord || nameV < 0 || !sizeHere) return;
+        if (matches.Count < query.Max && query.MatchesMeta(size[idx], modified))
         {
             string name = NameOf(b, nameV);
             if (query.MatchesName(name)) matches.Add(new FileEntry { ParentRec = parent[idx], Name = name, Size = size[idx], Modified = modified });
