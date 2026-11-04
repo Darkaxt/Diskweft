@@ -1,6 +1,6 @@
 # Diskweft specification
 
-Version 0.9 - 2026-11-04. Owner: Darkaxt.
+Version 0.10 - 2026-11-04. Owner: Darkaxt.
 
 This is the authoritative specification. The implementation plan cannot weaken
 its behavior, constraints or acceptance criteria. The user's standing engineering
@@ -76,6 +76,12 @@ delivery evidence; the maintenance workflow below owns the new correction.
   guest, applicable scanner/UI/package regressions and normal-build hook absence;
   publish and independently verify normal v0.1.2, then update the authorized local
   installation while preserving user profile/history and Pathweft exclusion.
+
+Maintenance reconciliation: FIX-01, FIX-02 and FIX-DELIVERY are satisfied and
+verified. M1/M2 are COMPLETE; normal v0.1.2 from source
+fcdec3bac0cc2524df4f77ba116a46c791b7d177 is published, independently retrieved,
+installed and actually launched. Existing history hashes match. No required
+blockers or deferrals remain; see verification/M1-FILE-ACTIONS.md.
 
 | Source | Pin / role |
 | --- | --- |

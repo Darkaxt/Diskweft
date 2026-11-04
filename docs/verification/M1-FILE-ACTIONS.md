@@ -1,6 +1,6 @@
 # Responsive file actions and clipboard correction
 
-2026-11-04. M1 COMPLETE; M2 owns publication and actual installed update.
+2026-11-04. M1 and M2 COMPLETE. No remaining criteria, blockers or deferrals.
 
 The user recycled a folder below AppData/Local/Tools and the UI temporarily
 locked. A later Copy path succeeded, but WPF Clipboard.Flush raised
@@ -65,6 +65,32 @@ PowerShell reader decoded UTF-8 Unicode text using its legacy default encoding
 was reverted after checking the actual x64 SDK ABI; no production change depended
 on it. Failed diagnostics remain distinguished from passing native acceptance.
 
+## Delivered and installed 0.1.2
+
+Normal [v0.1.2 release](https://github.com/Darkaxt/Diskweft/releases/tag/v0.1.2),
+release 434299737, published 2026-11-04T18:34:04Z, draft=false/prerelease=false;
+tag/source fcdec3bac0cc2524df4f77ba116a46c791b7d177. The GitHub bridge independently
+read back publication/source and all three assets/digests. gh independently
+downloaded the installer, ZIP and checksum manifest. Both hashes match the table
+below; extracted version/config/MIT/signature and actual native/CLI workflow pass.
+
+Administrator broker request 256812e7b8bf449b92e8b855acdda762 received consent,
+actually launched and returned installer exit 0. Existing installation updated
+from 0.1.1 to 0.1.2 without a reboot or forced termination. Actual installed EXE
+process 122552 received the exact owned folder argument, completed one file /
+1,234 bytes, and closed normally with exit 0. This uses the installed executable
+and real profile; UIA bound the main window by PID/title even with new-release
+notes present. Registry/three shell argument routes/shortcut/card readback agrees.
+
+The install-time root-file census was sparse and is not claimed as full history
+coverage. Separate final readback hashes all 37 pre-existing histories against the
+preserved pre-migration inventory and the migrated 10,109,036-byte C: snapshot
+against its known SHA-256. All match. Version acknowledgement changed normally
+when the new app ran; user history/settings were not migrated or rewritten.
+The single automatic history from our new launch fixture was separately cleaned.
+Original SpaceScan recovery and previous 0.1.1 release remain retained. Pathweft
+source/runtime/caller were not changed.
+
 ## Qualified package identity
 
 Normal 0.1.2, Authenticode NotSigned, MIT and DPI configuration included:
@@ -86,3 +112,19 @@ negative reproduction and diagnosed harness failures; it is not presented as a
 green aggregate run. Current qualifying native, persistence/regression, native
 error and all four package commands each returned exit 0/isError=false, with
 their actual result files inspected. Raw evidence was retained before cleanup.
+
+All cleanup manifests were inspected before separate tickets, then applied with
+no exclusions/errors/residuals:
+
+| Transaction | APPLIED result |
+| --- | --- |
+| b3696b1a49d987798888817f37eedd42 | Four members / 2,747,228 logical bytes: unpublished superseded candidate, before rebuilding final packages |
+| fbe6b6f07bac44968ca3623412ebac8a | 2,365 members / 6,296,016 bytes: completed native/guest/CLI scratch, after guest exit and evidence retention |
+| c43cd632764a82e44b7be4b5992483e1 | 2,110 members / 12,760 bytes: expendable fixtures copied with evidence; structured results/captures/snapshots retained |
+| 19cc13555be3b2646053b385ce19575c | 30 members / 3,286,635 bytes: independently downloaded delivery/launch scratch after all consumers exited |
+| 1dec12515075c0a7532ec502fb52ff7f | One member / 138 bytes: exact automatic installed-fixture history, preserving every pre-existing history |
+
+Exact D:/E: scratch roots and the test-only history are independently absent.
+Versioned published packages, required private evidence and intentional recovery
+material are preserved. Final source/document reconciliation introduces no new
+runtime changes beyond the qualified release.

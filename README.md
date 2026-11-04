@@ -9,15 +9,18 @@ results and Windows 11 appearance. The name complements
 classic/MFT scanning are implemented and verified, including real elevated NTFS.
 Windows themes, accent settings and native layout verification passed;
 see the [S3 evidence](docs/verification/S3-WINDOWS-APPEARANCE.md).
-The verified [v0.1.1 release](https://github.com/Darkaxt/Diskweft/releases/tag/v0.1.1)
-includes automatic largest-first live ordering, closer Explorer colors,
-Windows-blue usage bars and a first-launch release-notes correction.
+The verified [v0.1.2 release](https://github.com/Darkaxt/Diskweft/releases/tag/v0.1.2)
+fixes blocking recycle operations and the post-copy Clipboard.Flush error.
+Automatic largest-first ordering, Explorer colors, Windows-blue usage bars and
+the first-launch release-notes correction remain included.
 Both scanner comparisons pass the 10% median limit.
 See the [S4 ledger](docs/verification/S4-INTEGRATED-DELIVERY.md).
-The authorized system replacement is verified: Diskweft 0.1.1 installed,
+The authorized system replacement and maintenance update are verified: Diskweft 0.1.2 installed,
 SpaceScan uninstalled, original history preserved and recovery material checked.
 Pathweft integration remains with its owner. See the
 [S5 verification](docs/verification/S5-SYSTEM-REPLACEMENT.md).
+Maintenance M1/M2 are COMPLETE; see the
+[file-action and delivery evidence](docs/verification/M1-FILE-ACTIONS.md).
 
 - [Authoritative specification](docs/SPECIFICATION.md)
 - [Staged plan and current reconciliation](docs/IMPLEMENTATION-PLAN.md)

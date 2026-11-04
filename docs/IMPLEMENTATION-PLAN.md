@@ -22,7 +22,7 @@ authorized by the reported recycle freeze and post-copy Clipboard.Flush failure.
 | Maintenance stage | Status | Acceptance |
 | --- | --- | --- |
 | M1 - Responsive recycle and reliable Copy path | COMPLETE | FIX-01/02 verified: actual context-menu recycle/bin entry and parent reconciliation; dispatcher, cancel/error/busy/close safety; clipboard Unicode/persistence/contention; affected UI regressions and absent production hooks; installed/portable/uninstall packages |
-| M2 - Verified maintenance delivery | ACTIVE | FIX-DELIVERY: publish/retrieve v0.1.2 and verify actual local update with existing data preserved |
+| M2 - Verified maintenance delivery | COMPLETE | FIX-DELIVERY verified: normal published/retrieved v0.1.2, actual installed update and EXE launch, matching routes/card, preserved existing history, completed cleanup |
 
 The policy blocker is resolved through the user-installed Coordinator 0.20.4 and
 updated skill 1.1.0 sandbox.powershell route. Actual receipts prove reviewed script
@@ -31,8 +31,9 @@ FIX-01/02 native recycle/permanent-delete/busy/close/error reconciliation and
 clipboard contention/Unicode/persistence pass; actual bin entry is verified.
 Classic navigation/restart/listing/history, live ordering and notes regressions
 pass. Normal installed/portable CLI/native scan and uninstall pass. All M1
-acceptance is satisfied; no blockers or tracked deferrals. M2's remaining criteria
-are publication/retrieval and actual installed update verification. See
+acceptance is satisfied. M2 publication/retrieval, installed update/actual EXE
+launch and existing-history hash checks passed. Both maintenance stages are
+COMPLETE with no remaining criteria, blockers or tracked deferrals. See
 [M1 evidence](verification/M1-FILE-ACTIONS.md).
 The [policy issue report](verification/M1-SANDBOX-POLICY-BLOCKER.md) is historical.
 

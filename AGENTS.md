@@ -4,10 +4,10 @@ Read `docs/SPECIFICATION.md` first. It is authoritative. Maintain stage status
 and requirement reconciliation in `docs/IMPLEMENTATION-PLAN.md`.
 
 - The user authorized completion through S5 on 2026-11-04. S0-S5 are COMPLETE.
-  Maintenance M1 is COMPLETE: native file-action/clipboard and package checks
-  passed through Coordinator 0.20.4 sandbox.powershell. M2 is ACTIVE and
-  owns verified v0.1.2 release/local update. See the spec and policy issue report.
-  Normal v0.1.1 is published, independently retrieved, installed and verified;
+  Maintenance M1/M2 are COMPLETE: native file-action/clipboard/package checks
+  passed through Coordinator 0.20.4 sandbox.powershell; normal v0.1.2 is published,
+  independently retrieved, installed and verified. See the maintenance evidence.
+  The earlier policy issue report is resolved historical evidence;
   SpaceScan is uninstalled with original data and recovery material preserved.
   See the S4/S5 verification records before repeating any one-time migration.
   S4 owns final release; S5 owns the authorized installed-system replacement.
