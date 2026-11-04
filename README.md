@@ -9,10 +9,10 @@ results and Windows 11 appearance. The name complements
 classic/MFT scanning are implemented and verified, including real elevated NTFS.
 Windows themes, accent settings and native layout verification passed;
 see the [S3 evidence](docs/verification/S3-WINDOWS-APPEARANCE.md).
-S4 is BLOCKED on the administrator broker's fullscreen quiet mode; S5 is NOT STARTED.
-The `0.1.0` installer and portable candidate have
-passed isolated package checks, but are unpublished while required raw-NTFS
-performance verification is pending. See the [S4 ledger](docs/verification/S4-INTEGRATED-DELIVERY.md).
+S4 is ACTIVE; S5 is NOT STARTED. Both classic and real raw-NTFS performance
+comparisons pass the 10% median limit. Current `0.1.0` installer and portable
+packages are undergoing final native verification before publication.
+See the [S4 ledger](docs/verification/S4-INTEGRATED-DELIVERY.md).
 S4 owns final delivery; S5 owns the planned system
 replacement of installed SpaceScan after that verified release.
 

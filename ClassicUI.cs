@@ -191,7 +191,8 @@ partial class MainUI
             long deltaBytes = update.Bytes - node.Size, deltaFiles = update.Files - node.Files;
             if (!rescanActive || !rescanPaths.Contains(update.Path)) node.Name = update.Name;
             node.Size = update.Bytes; node.Files = update.Files;
-            node.State = update.State; node.Denied = update.Denied; node.Outcome = update.Outcome; node.DirectExt = update.DirectExt;
+            node.State = update.State; node.Denied = update.Denied; node.Outcome = update.Outcome;
+            if (update.DirectExt != null) node.DirectExt = update.DirectExt;
             if (rescanActive && rescanPaths.Contains(update.Path))
                 for (var p = node.Parent; p != null; p = p.Parent) { p.Size += deltaBytes; p.Files += deltaFiles; }
             if (node.Parent != null) touchedParents.Add(node.Parent);

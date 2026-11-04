@@ -4,9 +4,8 @@ Read `docs/SPECIFICATION.md` first. It is authoritative. Maintain stage status
 and requirement reconciliation in `docs/IMPLEMENTATION-PLAN.md`.
 
 - The user authorized completion through S5 on 2026-11-04. S0-S3 are COMPLETE;
-  S4 is BLOCKED on the administrator broker's fullscreen quiet mode; S5 remains
-  NOT STARTED. On renewed user readiness, resume S4 through the broker before
-  continuing through the remaining
+  S4 is ACTIVE again after renewed user readiness for administrator execution;
+  S5 remains NOT STARTED. Continue through the remaining
   authorized stages, closing each before advancing.
   S4 owns final release; S5 owns the authorized installed-system replacement.
 - Keep at most one ACTIVE stage. Validate complete specified workflows rather

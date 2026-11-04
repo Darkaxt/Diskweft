@@ -407,32 +407,32 @@ partial class Mft
             size = new long[count];
             flags = new byte[count];
             names = new string[count];
-            if (query == null) { recordReader = record => ReadLogicalRecord(h, runs, cluster, record); StartProgress(root); }
+            if (query == null) { recordReader = record => { lock (rawReadSync) return ReadLogicalRecord(h, runs, cluster, record); }; StartProgress(root); }
             Scanner.Total = count;
 
             int chunk = Math.Max(cluster, 4 << 20) / cluster * cluster;
-            var buf = new byte[chunk];
             long rec = 0;
-            foreach (var run in runs)
+            foreach (var part in ReadChunks(h, runs, cluster, chunk))
             {
-                long off = run.Key * cluster, left = run.Value * cluster;
-                while (left > 0 && rec < count && !Scanner.Cancel)
-                {
-                    int n = (int)Math.Min(left, chunk);
-                    Read(h, off, buf, n);
+                var buf = part.Buffer;
+                int n = part.Length;
+#if DISKWEFT_TEST
+                    long recordsStarted = System.Diagnostics.Stopwatch.GetTimestamp();
+#endif
                     for (int i = 0; i + recSize <= n && rec < count; i += recSize, rec++)
                     {
                         if (Scanner.Cancel) break;
                         ParseRecord(buf, i, rec);
                         if (progress != null && (rec & 255) == 0) progress.Checkpoint(false);
                     }
-                    off += n;
-                    left -= n;
+#if DISKWEFT_TEST
+                    if (publication != null) publication.MftRecordTicks += System.Diagnostics.Stopwatch.GetTimestamp() - recordsStarted;
+#endif
                     Scanner.FilesSeen = rec;
 #if DISKWEFT_TEST
                     if (RecordsObserved != null) { if (progress != null) progress.Checkpoint(true); RecordsObserved(rec, publication); }
 #endif
-                }
+                if (Scanner.Cancel || rec >= count) break;
             }
             if (progress == null) return BuildTree(root);
             if (!Scanner.Cancel)
@@ -614,7 +614,8 @@ partial class Mft
 
         if (progress != null)
         {
-            UpdateProgress((int)idx, previous, nameV < 0 ? null : NameOf(b, nameV), modified);
+            string topName = nameV >= 0 && (recFlags & 2) == 0 && Stats.WantsTop(size[idx]) ? NameOf(b, nameV) : null;
+            UpdateProgress((int)idx, previous, topName, modified);
             return;
         }
         if (baseRef != 0 || (recFlags & 2) != 0 || rec < FirstUserRecord || nameV < 0 || !sizeHere) return;

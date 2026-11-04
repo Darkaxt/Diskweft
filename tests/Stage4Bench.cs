@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Input;
@@ -12,6 +13,7 @@ using System.Web.Script.Serialization;
 
 class Stage4Bench
 {
+    [DllImport("kernel32.dll")] static extern uint GetCurrentProcessorNumber();
     static readonly BindingFlags Static = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
     static readonly BindingFlags Instance = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
     static object Field(object owner, string name) { return owner.GetType().GetField(name, Instance).GetValue(owner); }
@@ -27,7 +29,17 @@ class Stage4Bench
     {
         try
         {
-            if (args[0]=="native")return Native(args[1],args[2]);
+            string processorSetting=Environment.GetEnvironmentVariable("DISKWEFT_BENCH_PROCESSOR");
+            if(processorSetting!=null)
+            {
+                int processor=int.Parse(processorSetting);
+                if(processor<0 || processor>=63)throw new Exception("Unsupported benchmark processor index");
+                long mask=1L<<processor;
+                var ownedProcess=Process.GetCurrentProcess();
+                if((ownedProcess.ProcessorAffinity.ToInt64()&mask)==0)throw new Exception("Benchmark processor is outside inherited affinity");
+                ownedProcess.ProcessorAffinity=new IntPtr(mask);
+            }
+            if (args[0]=="native" || args[0]=="native-host")return Native(args[1],args[2],args[0]=="native-host");
             if (args[0]=="prepare")
             {
                 string fixture=Path.GetFullPath(args[1]);
@@ -50,11 +62,15 @@ class Stage4Bench
             }
             string kind=args[0], engine=args[1], root=args[2], output=args[3];
             var process=Process.GetCurrentProcess();
+            uint processorBefore=GetCurrentProcessorNumber();
             var cpu=process.TotalProcessorTime;
             var clock=new Stopwatch(); object result;
             var beforeAssemblies=AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetName().Name).ToArray();
             double publicationMs=0; int mailboxDirectories=0,mailboxLargest=0; long revisions=0;
             string outcome="baseline";
+            double finalTopMs=0;int nameRereads=0;long directoryValues=0;
+            double readMs=0,recordMs=0,flushMs=0;
+            double directoryMs=0,fileMs=0,updateMs=0;long updateCount=0;
             if(kind=="baseline")
             {
                 var assembly=Assembly.LoadFrom(args[4]);
@@ -69,15 +85,25 @@ class Stage4Bench
                 else scanner.GetMethod("Scan",Static).Invoke(null,new object[]{result,root});
                 clock.Stop();
             }
+            else if(kind=="core")
+            {
+                Exclude.Set(new string[0]);Stats.Reset();Scanner.Cancel=false;Scanner.CollectExt=true;
+                var node=new Node {Name=root};clock.Start();Scanner.Scan(node,root);clock.Stop();result=node;
+                outcome="diagnostic-core";
+            }
             else
             {
                 Exclude.Set(new string[0]);
+                ScanSession.DetailedMftProfile=args.Contains("--profile-detailed");
                 var session=new ScanSession(new[]{root},false,engine=="mft");
                 clock.Start(); session.Run(); clock.Stop();
                 result=session.Root;outcome=session.Outcome;
                 if(engine=="mft" && !session.Mode.Contains("MFT (progressive records)"))throw new Exception("MFT benchmark fell back: "+session.Mode);
                 publicationMs=1000.0*session.PublicationTicks/Stopwatch.Frequency;
                 mailboxDirectories=session.MaxMailboxDirectories;mailboxLargest=session.MaxMailboxLargest;
+                finalTopMs=1000.0*session.MftFinalTopTicks/Stopwatch.Frequency;nameRereads=session.MftNameRereads;directoryValues=session.PublishedDirectoryValues;
+                readMs=1000.0*session.MftReadTicks/Stopwatch.Frequency;recordMs=1000.0*session.MftRecordTicks/Stopwatch.Frequency;flushMs=1000.0*session.MftFlushTicks/Stopwatch.Frequency;
+                directoryMs=1000.0*session.MftDirectoryTicks/Stopwatch.Frequency;fileMs=1000.0*session.MftFileTicks/Stopwatch.Frequency;updateMs=1000.0*session.MftUpdateTicks/Stopwatch.Frequency;updateCount=session.MftUpdateCount;
                 var batch=session.Drain();revisions=batch.Revision;
             }
             process.Refresh();
@@ -88,14 +114,24 @@ class Stage4Bench
             Save(output,new {passed=true,kind=kind,engine=engine,milliseconds=clock.Elapsed.TotalMilliseconds,cpuMilliseconds=(process.TotalProcessorTime-cpu).TotalMilliseconds,
                 peakWorkingSet=process.PeakWorkingSet64,peakPagedBytes=process.PeakPagedMemorySize64,privateBytesAtCompletion=process.PrivateMemorySize64,files=files,bytes=bytesTotal,directories=directories,outcome=outcome,
                 publicationMilliseconds=publicationMs,maxMailboxDirectories=mailboxDirectories,maxMailboxLargest=mailboxLargest,revisions=revisions,
+                finalTopMilliseconds=finalTopMs,nameRereads=nameRereads,publishedDirectoryValues=directoryValues,
+                rawReadMilliseconds=readMs,recordLoopMilliseconds=recordMs,ancestorFlushMilliseconds=flushMs,
+                directoryMilliseconds=directoryMs,fileAggregationMilliseconds=fileMs,updateMilliseconds=updateMs,updateCount=updateCount,detailedProfile=ScanSession.DetailedMftProfile,
+                processorBefore=processorBefore,processorAfter=GetCurrentProcessorNumber(),processorAffinity=process.ProcessorAffinity.ToInt64(),
                 loadedAssemblies=AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetName().Name).Except(beforeAssemblies).ToArray()});
             Console.WriteLine(File.ReadAllText(output));return 0;
         }
         catch(Exception ex){Console.Error.WriteLine(ex);return 1;}
     }
-    static int Native(string fixture,string output)
+    static int Native(string fixture,string output,bool host)
     {
-        if(Environment.GetEnvironmentVariable("DISKWEFT_SANDBOX")!="1")throw new Exception("Native performance must run in the owned guest.");
+        if(host)
+        {
+            if(!Path.GetFullPath(fixture).Equals(@"D:\Temp\Diskweft-s4-optimization\classic\mount\million",StringComparison.OrdinalIgnoreCase)
+                || !Path.GetFullPath(output).Equals(@"D:\Projects\Diskweft\.local\s4\performance\classic-native\wpf",StringComparison.OrdinalIgnoreCase))
+                throw new Exception("Host native performance requires the exact owned read-only fixture and isolated output.");
+        }
+        else if(Environment.GetEnvironmentVariable("DISKWEFT_SANDBOX")!="1")throw new Exception("Native performance must run in the owned guest.");
         Directory.CreateDirectory(output);
         Environment.SetEnvironmentVariable("DISKWEFT_TEST_ROOT",Path.Combine(output,"profile"));
         var app=new Application();var ui=new MainUI();
@@ -133,13 +169,13 @@ class Stage4Bench
                     firstUsefulFromProducerPublicationMs=firstUseful,startToUsefulProducerMetadataMs=1000.0*(usableMetadata-started)/Stopwatch.Frequency,
                     startToFirstUsefulWpfMs=1000.0*(usableMetadata-started)/Stopwatch.Frequency+firstUseful,
                     dispatcherP95Ms=p95,dispatcherMaxMs=samples.Last(),samples=samples.Count,navigationDuringScan=selected,ownedWorkers=owner.DiagnosticWorkers,
-                    boundary="Owned headless guest WPF dispatcher actions; real million-file readonly host mapping; metadata origin is first nonzero resolved producer publication, not first raw OS record; 50ms diagnostic cadence, one outstanding sample"});
+                    boundary=(host?"Owned host WPF actions; real million-file read-only VHD fixture":"Owned headless guest WPF actions; real million-file read-only host mapping")+"; metadata origin is first nonzero resolved producer publication, not first raw OS record; 10ms diagnostic cadence, one outstanding sample"});
             }
             catch(Exception ex){failure=ex;}
             owner.Window.Close();
         };
         app.DispatcherUnhandledException+=(s,e)=>{failure=e.Exception;e.Handled=true;ui.Window.Close();};
-        ui.Window.Loaded+=delegate{started=Stopwatch.GetTimestamp();timer.Change(0,50);ui.DiagnosticScan(fixture);};
+        ui.Window.Loaded+=delegate{started=Stopwatch.GetTimestamp();timer.Change(0,10);ui.DiagnosticScan(fixture);};
         try{app.Run(ui.Window);}finally{timer.Dispose();ScanSession.Published=null;}
         if(failure!=null)throw failure;
         if(!File.Exists(Path.Combine(output,"result.json")))throw new Exception("Native performance ended without acceptance result.");

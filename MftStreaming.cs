@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Diagnostics;
+using System.Collections.Concurrent;
+using System.Threading;
 using System.Linq;
 using Microsoft.Win32.SafeHandles;
 
@@ -12,8 +15,63 @@ partial class Mft
     int[] nameSource;
     int lastRecord;
     Func<int, byte[]> recordReader;
+    readonly object rawReadSync = new object();
     readonly Dictionary<int, List<int>> pendingPathCandidates = new Dictionary<int, List<int>>();
     struct MftFile { public int Parent, Ext; public long Size; public bool Eligible; }
+    sealed class ReadChunk { public byte[] Buffer; public int Length; }
+    IEnumerable<ReadChunk> ReadChunks(SafeFileHandle handle, List<KeyValuePair<long,long>> runs, int cluster, int chunk)
+    {
+        // One serialized raw reader, two buffers, one pending chunk. The parser
+        // remains the sole owner of records/tree/statistics. Its iterator owns
+        // cancellation and joins the reader before the raw handle can close.
+        using (var cancel = new CancellationTokenSource())
+        using (var available = new BlockingCollection<byte[]>(2))
+        using (var ready = new BlockingCollection<ReadChunk>(1))
+        {
+            available.Add(new byte[chunk]); available.Add(new byte[chunk]);
+            Exception failure = null;
+            var reader = new Thread(() => {
+                try
+                {
+                    long records = 0;
+                    foreach (var run in runs)
+                    {
+                        long offset = run.Key * cluster, left = run.Value * cluster;
+                        while (left > 0 && records < count && !Scanner.Cancel)
+                        {
+                            byte[] buffer = available.Take(cancel.Token);
+                            int length = (int)Math.Min(left, chunk);
+#if DISKWEFT_TEST
+                            long started = Stopwatch.GetTimestamp();
+#endif
+                            lock (rawReadSync) Read(handle, offset, buffer, length);
+#if DISKWEFT_TEST
+                            if (publication != null) publication.MftReadTicks += Stopwatch.GetTimestamp() - started;
+#endif
+                            ready.Add(new ReadChunk { Buffer = buffer, Length = length }, cancel.Token);
+                            records += length / recSize; offset += length; left -= length;
+                        }
+                        if (records >= count || Scanner.Cancel) break;
+                    }
+                }
+                catch (OperationCanceledException) { }
+                catch (Exception ex) { failure = ex; }
+                finally { ready.CompleteAdding(); }
+            }) { IsBackground = true, Name = "Diskweft NTFS reader" };
+            reader.Start();
+            try
+            {
+                foreach (var part in ready.GetConsumingEnumerable())
+                {
+                    yield return part;
+                    available.Add(part.Buffer);
+                    if (Scanner.Cancel) break;
+                }
+                if (failure != null) throw new IOException("NTFS reader failed: " + failure.Message, failure);
+            }
+            finally { cancel.Cancel(); reader.Join(); }
+        }
+    }
     void StartProgress(string root)
     {
         nameSource = new int[count];
@@ -52,24 +110,54 @@ partial class Mft
     long PendingCandidateCount() { return pendingPathCandidates.Where(kv => !progress.IsExcluded(kv.Key)).Sum(kv => (long)kv.Value.Count); }
     void UpdateProgress(int record, MftFile previous, string name, long modified)
     {
+#if DISKWEFT_TEST
+        bool profile = publication != null && ScanSession.DetailedMftProfile;
+        long started = profile ? Stopwatch.GetTimestamp() : 0;
+#endif
         lastRecord = Math.Max(lastRecord, record);
         if (previous.Eligible)
         {
             progress.File(previous.Parent, extNames[previous.Ext], -previous.Size, -1);
             var previousDirectory = progress.ResolvedNode(previous.Parent);
-            var priorTop = Stats.Top.FirstOrDefault(f => f.Record == record && f.Dir == previousDirectory);
-            if (priorTop != null) { if (name == null) name = priorTop.Name; if (modified == 0) modified = priorTop.Modified; Stats.Top.Remove(priorTop); }
+            // A capturing predicate here makes the Framework compiler allocate
+            // a display-class object at entry for every MFT record, including
+            // the ordinary records that never enter this correction branch.
+            for (int i = 0; i < Stats.Top.Count; i++)
+            {
+                var priorTop = Stats.Top[i];
+                if (priorTop.Record != record || priorTop.Dir != previousDirectory) continue;
+                if (name == null) name = priorTop.Name;
+                if (modified == 0) modified = priorTop.Modified;
+                Stats.Top.RemoveAt(i); break;
+            }
         }
         if ((flags[record] & (InUse | IsDir | GoodName)) == (InUse | IsDir | GoodName))
+        {
+#if DISKWEFT_TEST
+            long directoryStarted = profile ? Stopwatch.GetTimestamp() : 0;
+#endif
             progress.Directory(record, parent[record], names[record], (flags[record] & Excluded) != 0);
+#if DISKWEFT_TEST
+            if (profile) publication.MftDirectoryTicks += Stopwatch.GetTimestamp() - directoryStarted;
+#endif
+        }
         var next = FileMeta(record);
         if (next.Eligible)
         {
+#if DISKWEFT_TEST
+            long fileStarted = profile ? Stopwatch.GetTimestamp() : 0;
+#endif
             progress.File(next.Parent, extNames[next.Ext], next.Size, 1);
+#if DISKWEFT_TEST
+            if (profile) publication.MftFileTicks += Stopwatch.GetTimestamp() - fileStarted;
+#endif
             var dir = progress.ResolvedNode(next.Parent);
             if (dir != null && name != null && Stats.WantsTop(next.Size))
                 Stats.AddTop(new FileEntry { Dir = dir, Record = record, ParentRec = next.Parent, Name = name, Size = next.Size, Modified = modified });
         }
+#if DISKWEFT_TEST
+        if (profile) { publication.MftUpdateTicks += Stopwatch.GetTimestamp() - started; publication.MftUpdateCount++; }
+#endif
     }
     byte[] ReadLogicalRecord(SafeFileHandle handle, List<KeyValuePair<long,long>> runs, int cluster, int record)
     {
@@ -88,6 +176,9 @@ partial class Mft
     }
     FileEntry FileDetails(int record, Func<int,byte[]> read)
     {
+#if DISKWEFT_TEST
+        if (publication != null) publication.MftNameRereads++;
+#endif
         byte[] b = read(nameSource[record]);
         if (!Fixup(b, 0, recSize)) throw new IOException("MFT largest-file name record changed while reading");
         string name = null; long modified = 0;
@@ -105,6 +196,9 @@ partial class Mft
     }
     void FinalTop(Func<int,byte[]> read)
     {
+#if DISKWEFT_TEST
+        long started = Stopwatch.GetTimestamp();
+#endif
         // Re-select from compact metadata after exclusions/ancestry settle. Only
         // bounded winning names are re-read; no retained filename per scanned file.
         var candidates = new List<int>(); long minimum = -1;
@@ -118,9 +212,19 @@ partial class Mft
                 minimum = size[candidates[candidates.Count - 1]];
             }
         }
+        var cached = Stats.Top.Where(f => f.Record >= FirstUserRecord && f.Record < count
+            && progress.ResolvedNode(parent[f.Record]) == f.Dir).ToDictionary(f => f.Record);
         Stats.Top = new List<FileEntry>(progress.SeedTop);
-        foreach (int record in candidates.OrderByDescending(r => size[r]).Take(Stats.TopN)) Stats.AddTop(FileDetails(record, read));
+        foreach (int record in candidates.OrderByDescending(r => size[r]).Take(Stats.TopN))
+        {
+            FileEntry entry;
+            if (!cached.TryGetValue(record, out entry) || entry.Size != size[record]) entry = FileDetails(record, read);
+            Stats.AddTop(entry);
+        }
         Stats.Trim();
+#if DISKWEFT_TEST
+        if (publication != null) publication.MftFinalTopTicks += Stopwatch.GetTimestamp() - started;
+#endif
     }
 #if DISKWEFT_TEST
     internal static Action<long, ScanSession> RecordsObserved;
@@ -136,7 +240,9 @@ partial class Mft
             if (checkpoint != null) checkpoint(i);
         }
         if (!Scanner.Cancel) m.FinalTop(m.recordReader);
-        m.progress.Finish(m.PendingCandidateCount()); return m.progress.Root;
+        m.progress.Finish(m.PendingCandidateCount());
+        session.Outcome = m.progress.Root.Outcome; session.Publish(true, m.progress.Root, true);
+        return m.progress.Root;
     }
 #endif
 }

@@ -12,7 +12,7 @@ Updated: 2026-11-04. Current authorization: complete through S5,
 | S1 - Independent identity and classic live scanning | COMPLETE | Real folder/UNC scan -> consistent live tree/statistics -> navigation -> correct terminal result, with independent Diskweft identities | ID-01; SCAN-01,03..07 for classic; COMPAT-01 for affected classic paths |
 | S2 - Progressive NTFS/MFT scanning | COMPLETE | Real volume -> progressive resolved folders/statistics -> navigation -> final result; safe fallback and all-drives integration | SCAN-02; SCAN-03..07 for MFT/mixed scans; affected COMPAT-01, VERIFY-01 |
 | S3 - Windows 11 appearance and accents | COMPLETE | Native light/dark/high-contrast UI, Appearance persistence and live accent/theme changes across completed scan workflows | UI-01..04 |
-| S4 - Integrated verification and final delivery | BLOCKED | Full specification reconciliation, compatibility/performance evidence, verified final commit and independently retrieved normal release | PERF-01, VERIFY-01, DELIVER-01; integrated ID/SCAN/UI/COMPAT acceptance |
+| S4 - Integrated verification and final delivery | ACTIVE | Full specification reconciliation, compatibility/performance evidence, verified final commit and independently retrieved normal release | PERF-01, VERIFY-01, DELIVER-01; integrated ID/SCAN/UI/COMPAT acceptance |
 | S5 - Replace installed SpaceScan with Diskweft | NOT STARTED | Verified Diskweft installation and preserved data, existing SpaceScan launch/integration routes replaced, rollback proved and obsolete owned registrations retired | MIGRATE-01 |
 
 Only one stage may be ACTIVE. S1 depends on S0; S2 on S1; S3 on S2; S4 on S3.
@@ -32,7 +32,7 @@ advance sequentially only after the current stage meets its acceptance criteria.
 
 S0 reconciliation: ENV-01..04 satisfied and verified. No remaining S0 acceptance
 criteria, blockers or tracked deferrals. S0-S3 are COMPLETE.
-S4 is BLOCKED; S5 remains NOT STARTED.
+S4 is ACTIVE; S5 remains NOT STARTED.
 Evidence: [S0 baseline](verification/S0-BASELINE.md).
 
 ## S1 current reconciliation
@@ -79,29 +79,28 @@ cleanup transaction `29e0594183ec4d4e47dc96cb2ee3218e` applied signed manifest
 Exact E: test and D: native-build roots were confirmed absent. S4 subsequently
 became ACTIVE; S5 has not begun.
 
-S4 current reconciliation: BLOCKED on externally unavailable administrator
-execution. All independent preparation and task cleanup are finished. The
-million-file classic ratio of medians (+4.2851%) and median paired increase
-(+6.3500%), bounded mailbox, native latency (p95 3.0725 ms and first useful WPF
-results 629.9809 ms from scan start),
-real UNC/ACL/long-path/cancel/report/history regression and
-normal installed/portable candidate workflows pass. See
-[S4 evidence](verification/S4-INTEGRATED-DELIVERY.md). No product release exists.
-PERF-01's three paired raw-NTFS runs are externally blocked: broker request
-`4924a5a003cf4ba89ac410cbaa7e3134` returned `fullscreen_active`, launched=false.
-The user must return and direct a fresh request; do not retry automatically.
-DELIVER-01 depends on that measurement and final reconciliation, publication and
-independent asset retrieval. S5 remains NOT STARTED behind verified delivery.
+S4 current reconciliation: ACTIVE. PERF-01 now passes on the current implementation:
+classic baseline/fork medians 781.7848 / 808.9633 ms (+3.4765%, same paired median),
+NTFS 1,863.1023 / 1,949.3709 ms (+4.6304%, same paired median). Each comparison has
+three alternating paired runs after warm-up. Classic uses identical process-only
+CPU0 affinity on the hybrid host; initial unrestricted timing varied and missed
+the gate (+26.3743%). That failed result remains recorded rather than discarded.
+Current real million-file native WPF results: first useful view 588.744 ms from
+scan start, 557.4034 ms from useful producer metadata; dispatcher p95 12.3885 ms,
+160 samples, exact final totals and real navigation, zero owned workers at idle.
+The new raw reader has two fixed buffers, one serialized reader and guaranteed
+join before handle close. Real MFT query and scan/cancel/restart/mixed-root
+checks passed under request `9842ce6358bd4b928344517ef63b634d` (exit 0).
 
-The current benchmark is retained at `.local/s4/benchmark/` for that required
-NTFS comparison; its RETENTION.json records purpose/hash. On renewed direction,
-submit the broker command `scripts/Invoke-PerformanceChecks.ps1 -Mode Ntfs
--BuildRoot D:/Projects/Diskweft/.local/s4/benchmark`, binding that benchmark and
-the retained baseline. Observe the original command result; fix any failed limit
-before publication. Candidate packages stay in `dist/0.1.0-final-candidate` and
-are unpublished.
+Remaining S4 advancement blockers are internal delivery/verification work:
+final source reconciliation,
+commit and normal release publication followed by independent delivered-asset
+retrieval/verification. Resolve these to satisfy DELIVER-01 and close S4. No
+external administrator impediment remains. S5 is NOT STARTED behind delivery.
+Current packages are `dist/0.1.0`; earlier candidates are superseded. See
+[S4 evidence](verification/S4-INTEGRATED-DELIVERY.md) for exact hashes and scope.
 
-The final S4 Sandbox `bf80b4a0-20ff-42b1-bd8d-b5508984de5d` completed the current
+The earlier S4 Sandbox `bf80b4a0-20ff-42b1-bd8d-b5508984de5d` completed the prior
 optimized native/package workflow, exited 0 and released its lease with exact
 guest exit verified. Earlier Sandbox `ff6e79fa-4e6f-4333-973c-81fb6e9933ea` also
 exited; its aggregate exit 1 includes diagnosed harness errors and is not counted
@@ -121,7 +120,14 @@ already absent). No errors or exclusions remain; every exact D:/E: scratch root
 was independently confirmed absent. Superseded candidates and the separate final
 package guest scratch were also transactionally removed. Current candidate,
 baseline, pending benchmark and required evidence remain intentionally retained
-outside disposable roots. No required work has been reclassified as a deferral.
+outside disposable roots. New optimization scratch is registered in transaction
+`265f13bdd6ca51c127fcefbe951b05db`; all VHD mounts have verified detachment.
+Current package guest `c6bb37ee-0a40-4594-a517-d2443896fac6` passed current classic
+native and installed/portable/uninstall checks (exit0/isError=false), then exited
+with sandbox_exit_verified=true and released its lease. No required work is deferred.
+Optimization cleanup applied its inspected4,383-member signed manifest with no
+errors/exclusions; both exact scratch roots are absent. Retained private results
+and current versioned deliverables remain available for delivery verification.
 
 ### S1 - Independent identity and classic live scanning
 
@@ -228,3 +234,8 @@ S3 closure assessment: Appearance owns palette/lifetime changes and existing WPF
 views share dynamic resources. Native caption and capability-checked solid
 surfaces replace the inherited decorative glass path. No competing state owner,
 framework migration or required consolidation obstructs S4.
+
+S4 pre-release closure assessment: one parser owns scanner state, one dispatcher
+owns its projection. The bounded raw-reader pipeline cancels waits and joins its
+reader before handle close; no arbitrary lifecycle timeout or disk fanout.
+No material consolidation finding obstructs final release or the S5 migration.

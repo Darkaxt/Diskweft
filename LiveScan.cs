@@ -45,8 +45,10 @@ sealed class ScanSession
     Node extensionDirectory;
     readonly Dictionary<string, long[]> publishedDirectExtensions = new Dictionary<string, long[]>();
     readonly List<Node> known = new List<Node>();
+    readonly Dictionary<Node, string> directoryPaths = new Dictionary<Node, string>();
     readonly Stopwatch clock = Stopwatch.StartNew();
     long lastPublish, revision;
+    bool usefulPublished;
     int entries, attempt;
     public readonly string[] Paths;
     public readonly bool VirtualRoot, PreferMft;
@@ -61,6 +63,11 @@ sealed class ScanSession
     internal static Action<ScanSession, Node> Enumerated;
     internal long PublicationTicks;
     internal int MaxMailboxDirectories, MaxMailboxLargest;
+    internal long PublishedDirectoryValues, MftFinalTopTicks;
+    internal long MftReadTicks, MftRecordTicks, MftFlushTicks;
+    internal static bool DetailedMftProfile;
+    internal long MftDirectoryTicks, MftFileTicks, MftUpdateTicks, MftUpdateCount;
+    internal int MftNameRereads;
 #endif
 
     public ScanSession(string[] paths, bool virtualRoot, bool preferMft)
@@ -80,6 +87,13 @@ sealed class ScanSession
     { return source.ToDictionary(kv => kv.Key, kv => new[] { kv.Value[0], kv.Value[1] }); }
     public void Discover(Node node)
     { node.State = DirectoryState.Pending; known.Add(node); dirty.Add(node); }
+    string DirectoryPath(Node node)
+    {
+        string path;
+        if (!directoryPaths.TryGetValue(node, out path))
+            directoryPaths[node] = path = node.Parent == null || node.IsAbsolute ? node.Name : Scanner.Join(DirectoryPath(node.Parent), node.Name);
+        return path;
+    }
     public void Changed(Node node) { dirty.Add(node); }
     public void FilesFound(Node node, long bytes, long files)
     {
@@ -115,11 +129,12 @@ sealed class ScanSession
     }
     public void Checkpoint(Node node)
     {
-        if ((++entries & 63) == 0 && clock.ElapsedMilliseconds - lastPublish >= 100) Publish(false, node);
+        if ((++entries & 63) == 0 && clock.ElapsedMilliseconds - lastPublish >= 500) Publish(false, node);
     }
     public void Publish(bool terminal, Node current, bool force = false)
     {
-        if (!terminal && !force && revision > 0 && clock.ElapsedMilliseconds - lastPublish < 100) return;
+        bool firstUseful = !usefulPublished && current != null && current.Files > 0;
+        if (!terminal && !force && !firstUseful && revision > 0 && clock.ElapsedMilliseconds - lastPublish < 500) return;
 #if DISKWEFT_TEST
         long publicationStarted = Stopwatch.GetTimestamp();
 #endif
@@ -130,14 +145,16 @@ sealed class ScanSession
         directDeltas.Clear();
         currentDirectory = null; currentDelta = null;
         var updates = dirty.Select(n => new DirectoryUpdate {
-            Path = n.FullPath, Name = n.Name, ParentPath = n.Parent == null ? null : n.Parent.FullPath,
+            Path = DirectoryPath(n), Name = n.Name, ParentPath = n.Parent == null ? null : DirectoryPath(n.Parent),
             Bytes = n.Size, Files = n.Files, Denied = n.Denied, State = n.State,
-            Outcome = n.Outcome, DirectExt = CopyExtensions(n.DirectExt)
+            // Direct per-folder extension tables are consumed by terminal
+            // rescan/history handoff, not by the live global extension view.
+            Outcome = n.Outcome, DirectExt = terminal ? CopyExtensions(n.DirectExt) : null
         }).ToList();
         dirty.Clear();
         var extensions = CopyExtensions(Stats.Ext);
         var largest = Stats.Top.OrderByDescending(f => f.Size).Take(Stats.TopN).Select(f => new FileUpdate {
-            Directory = f.Dir.FullPath, Name = f.Name, Bytes = f.Size, Modified = f.Modified
+            Directory = DirectoryPath(f.Dir), Name = f.Name, Bytes = f.Size, Modified = f.Modified
         }).ToList();
         lock (mailboxLock)
         {
@@ -152,8 +169,10 @@ sealed class ScanSession
 #endif
         }
         lastPublish = clock.ElapsedMilliseconds;
+        usefulPublished |= firstUseful;
 #if DISKWEFT_TEST
         PublicationTicks += Stopwatch.GetTimestamp() - publicationStarted;
+        PublishedDirectoryValues += updates.Count;
         var observer = Published;
         if (observer != null) observer(this, current);
 #endif
@@ -162,7 +181,8 @@ sealed class ScanSession
     {
         foreach (var node in nodes)
         {
-            string path = node.FullPath;
+            string path = DirectoryPath(node);
+            directoryPaths.Remove(node);
             known.Remove(node); dirty.Remove(node); directDeltas.Remove(node);
             lock (mailboxLock) { pending.Directories.Remove(path); pending.RemovedPaths.Add(path); }
         }
@@ -176,6 +196,7 @@ sealed class ScanSession
         node.Dirs.Clear(); node.DirectExt.Clear(); node.Size = node.Files = 0;
         node.State = DirectoryState.Scanning; node.Outcome = "scanning";
         attempt++;
+        usefulPublished = false;
         RestorePublishedStatistics();
     }
     static bool IsWithin(Node node, Node ancestor)

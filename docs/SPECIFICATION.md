@@ -20,7 +20,7 @@ independent identity and complete classic live-scanning workflow, including its
 integration, verification, commit and source synchronization. S1 is COMPLETE.
 The 2026-11-04 instruction, "You may start working on this all the way in",
 authorizes completing S2-S5, including final release and system replacement.
-S0-S3 are COMPLETE; S4 is BLOCKED on the fullscreen-declined administrator
+S0-S3 are COMPLETE; S4 is ACTIVE after renewed user readiness for the administrator
 benchmark request, and S5 remains NOT STARTED. No intermediate product release is
 authorized. The standing final-release rule applies in S4 after the whole
 product scope and its prerequisite verification pass.
