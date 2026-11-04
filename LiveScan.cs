@@ -40,6 +40,10 @@ sealed class ScanSession
     ScanBatch pending = new ScanBatch();
     readonly HashSet<Node> dirty = new HashSet<Node>();
     readonly Dictionary<Node, long[]> directDeltas = new Dictionary<Node, long[]>();
+    Node currentDirectory;
+    long[] currentDelta;
+    Node extensionDirectory;
+    readonly Dictionary<string, long[]> publishedDirectExtensions = new Dictionary<string, long[]>();
     readonly List<Node> known = new List<Node>();
     readonly Stopwatch clock = Stopwatch.StartNew();
     long lastPublish, revision;
@@ -55,6 +59,8 @@ sealed class ScanSession
     // Deterministic test barrier: real filesystem work pauses only in test builds.
     internal static Action<ScanSession, Node> Published;
     internal static Action<ScanSession, Node> Enumerated;
+    internal long PublicationTicks;
+    internal int MaxMailboxDirectories, MaxMailboxLargest;
 #endif
 
     public ScanSession(string[] paths, bool virtualRoot, bool preferMft)
@@ -75,13 +81,37 @@ sealed class ScanSession
     public void Discover(Node node)
     { node.State = DirectoryState.Pending; known.Add(node); dirty.Add(node); }
     public void Changed(Node node) { dirty.Add(node); }
-    public void FileFound(Node node, long bytes)
+    public void FilesFound(Node node, long bytes, long files)
     {
-        long[] delta;
-        if (!directDeltas.TryGetValue(node, out delta)) directDeltas[node] = delta = new long[2];
-        delta[0] += bytes; delta[1]++;
-        dirty.Add(node);
-        Checkpoint(node);
+        if (extensionDirectory != node)
+        {
+            FlushClassicExtensions();
+            extensionDirectory = node;
+            publishedDirectExtensions.Clear();
+        }
+        // The classic worker enumerates one directory at a time. Reuse its
+        // accumulator until publication or the next directory, rather than
+        // hashing the same node twice for every file.
+        if (currentDirectory != node)
+        {
+            currentDirectory = node;
+            if (!directDeltas.TryGetValue(node, out currentDelta)) directDeltas[node] = currentDelta = new long[2];
+            dirty.Add(node);
+        }
+        currentDelta[0] += bytes; currentDelta[1] += files;
+        Publish(false, node);
+    }
+    void FlushClassicExtensions()
+    {
+        if (extensionDirectory == null) return;
+        foreach (var kv in extensionDirectory.DirectExt)
+        {
+            long[] previous;
+            if (!publishedDirectExtensions.TryGetValue(kv.Key, out previous)) publishedDirectExtensions[kv.Key] = previous = new long[2];
+            long bytes = kv.Value[0] - previous[0], files = kv.Value[1] - previous[1];
+            if (bytes != 0 || files != 0) Stats.AddExt(kv.Key, bytes, files);
+            previous[0] = kv.Value[0]; previous[1] = kv.Value[1];
+        }
     }
     public void Checkpoint(Node node)
     {
@@ -90,10 +120,15 @@ sealed class ScanSession
     public void Publish(bool terminal, Node current, bool force = false)
     {
         if (!terminal && !force && revision > 0 && clock.ElapsedMilliseconds - lastPublish < 100) return;
+#if DISKWEFT_TEST
+        long publicationStarted = Stopwatch.GetTimestamp();
+#endif
+        FlushClassicExtensions();
         foreach (var kv in directDeltas)
             for (var p = kv.Key.Parent; p != null; p = p.Parent)
             { p.Size += kv.Value[0]; p.Files += kv.Value[1]; dirty.Add(p); }
         directDeltas.Clear();
+        currentDirectory = null; currentDelta = null;
         var updates = dirty.Select(n => new DirectoryUpdate {
             Path = n.FullPath, Name = n.Name, ParentPath = n.Parent == null ? null : n.Parent.FullPath,
             Bytes = n.Size, Files = n.Files, Denied = n.Denied, State = n.State,
@@ -111,9 +146,14 @@ sealed class ScanSession
             pending.Revision = ++revision; pending.Terminal = terminal;
             pending.Outcome = Outcome; pending.Error = Error; pending.Mode = Mode;
             pending.Attempt = attempt;
+#if DISKWEFT_TEST
+            MaxMailboxDirectories = Math.Max(MaxMailboxDirectories, pending.Directories.Count);
+            MaxMailboxLargest = Math.Max(MaxMailboxLargest, pending.Largest.Count);
+#endif
         }
         lastPublish = clock.ElapsedMilliseconds;
 #if DISKWEFT_TEST
+        PublicationTicks += Stopwatch.GetTimestamp() - publicationStarted;
         var observer = Published;
         if (observer != null) observer(this, current);
 #endif
@@ -213,6 +253,13 @@ sealed class ScanSession
         foreach (var kv in SeedExtensions) Stats.AddExt(kv.Key, kv.Value[0], kv.Value[1]);
         foreach (var n in known)
             foreach (var kv in n.DirectExt) Stats.AddExt(kv.Key, kv.Value[0], kv.Value[1]);
+        // Restore includes every retained direct total, even a final classic
+        // delta not previously published. Mark that directory's snapshot as
+        // reconciled so the replacement publication cannot add it again.
+        publishedDirectExtensions.Clear();
+        if (extensionDirectory != null)
+            foreach (var kv in extensionDirectory.DirectExt)
+                publishedDirectExtensions[kv.Key] = new[] { kv.Value[0], kv.Value[1] };
         // Failed MFT candidates must not leak into the classic replacement.
         foreach (var f in retainedLargest) Stats.AddTop(new FileEntry { Dir = new Node { Name = f.Directory }, Name = f.Name, Size = f.Bytes, Modified = f.Modified });
     }

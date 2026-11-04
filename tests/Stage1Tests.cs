@@ -199,15 +199,19 @@ class Stage1Tests
             admin = new System.Security.Principal.WindowsPrincipal(id).IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
         if (!admin)
         {
-            var fallback = new ScanSession(new[] { Path.GetPathRoot(Environment.SystemDirectory) }, false, true);
+            string systemRoot = Path.GetPathRoot(Environment.SystemDirectory);
+            var fallback = new ScanSession(new[] { fixture, systemRoot }, true, true);
             var reparseNames = new List<string>();
             Scanner.EnumWithCancellation(Path.GetPathRoot(Environment.SystemDirectory), (name, attr, size, modified) => {
                 if ((attr & Scanner.REPARSE) != 0 && (attr & Scanner.DIR) != 0) reparseNames.Add(name);
             }, () => false);
-            ScanSession.Enumerated = (s, n) => { if (n.Parent == null) s.Cancel(); };
+            ScanSession.Enumerated = (s, n) => { if (n.FullPath == systemRoot) s.Cancel(); };
             try { fallback.Run(); } finally { ScanSession.Enumerated = null; }
             Check(fallback.Mode.Contains("MFT unavailable") && fallback.Outcome == "stopped", "Real unprivileged MFT fallback/stop was not exercised.");
-            Check(reparseNames.Count > 0 && !fallback.Root.Dirs.Any(n => reparseNames.Contains(n.Name)), "Existing system-root reparse directories were not skipped.");
+            var volumeRoot = fallback.Root.Dirs.Single(n => n.FullPath == systemRoot);
+            Check(reparseNames.Count > 0 && !volumeRoot.Dirs.Any(n => reparseNames.Contains(n.Name)), "Existing system-root reparse directories were not skipped.");
+            Check(Stats.Ext.Values.Sum(v => v[0]) == fallback.Root.Size && Stats.Ext.Values.Sum(v => v[1]) == fallback.Root.Files,
+                "Mixed classic/MFT-denial replacement replayed a previously unflushed extension delta.");
             evidence.Add("Real denied raw-volume access fell back to a cancellable classic root enumeration without elevation.");
         }
         else throw new Exception("Run S1 acceptance unprivileged so real MFT-denial fallback is qualified safely.");
@@ -246,6 +250,8 @@ class Stage1Tests
         {
             fixture = Prepare(output);
             Core();
+            if (!args.Contains("--core"))
+            {
             var isolatedSentinels = new Dictionary<string, byte[]>();
             foreach (var relative in new[] { "ProtagonistLabs\\apps\\spacescan.json", "ProtagonistLabs\\SpaceScan\\exclude.txt", "SpaceScan\\exclude.txt", "Darkaxt\\Pathweft\\settings.json" })
             {
@@ -260,11 +266,12 @@ class Stage1Tests
             Check(File.Exists(card) && File.ReadAllText(card).Contains("\"id\": \"diskweft\""), "Independent ecosystem card was not written.");
             Check(Ecosystem.Data.EndsWith("\\Darkaxt\\Diskweft", StringComparison.OrdinalIgnoreCase), "Profile is not independently owned.");
             evidence.Add("Isolated SpaceScan legacy/shared profiles, ecosystem card and Pathweft sentinels preserved; Diskweft card/profile independently owned.");
+            }
         }
         catch (Exception ex) { failure = ex; }
         File.WriteAllText(Path.Combine(output, "result.json"), new JavaScriptSerializer().Serialize(new {
             passed = failure == null, error = failure == null ? null : failure.ToString(), evidence, partialDisplayMilliseconds,
-            coverage = "S1 classic workflows only. No progressive MFT, Windows theme/accent, performance or release acceptance."
+            coverage = args.Contains("--core") ? "Classic scanner, updater, UNC and report/history regression; native UI tested separately." : "S1 classic workflows only. No progressive MFT, Windows theme/accent, performance or release acceptance."
         }));
         if (failure != null) { Console.Error.WriteLine(failure); return 1; }
         foreach (var item in evidence) Console.WriteLine(item);

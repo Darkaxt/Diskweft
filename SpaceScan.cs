@@ -212,7 +212,7 @@ static class Scanner
 
     // Enumerates one directory. Returns false if it could not be opened (access denied etc).
     public static bool Enum(string path, Action<string, uint, long, long> onEntry)
-    { return EnumWithCancellation(path, onEntry, () => Cancel); }
+    { return EnumWithCancellation(path, onEntry, null); }
 
     public static bool EnumWithCancellation(string path, Action<string, uint, long, long> onEntry, Func<bool> cancelled)
     {
@@ -223,7 +223,7 @@ static class Scanner
         {
             do
             {
-                if (cancelled()) return true;
+                if (cancelled == null ? Cancel : cancelled()) return true;
                 if (d.cFileName == "." || d.cFileName == "..") continue;
                 onEntry(d.cFileName, d.dwFileAttributes, ((long)d.nFileSizeHigh << 32) | d.nFileSizeLow,
                     ((long)d.ftLastWriteTime.dwHighDateTime << 32) | (uint)d.ftLastWriteTime.dwLowDateTime);
@@ -247,7 +247,9 @@ static class Scanner
         Current = path;
         n.State = DirectoryState.Scanning;
         var children = new List<Node>();
-        bool ok = Enum(path, (name, attr, size, modified) =>
+        long pendingBytes = 0, pendingFiles = 0;
+        bool ok;
+        try { ok = Enum(path, (name, attr, size, modified) =>
         {
             if ((attr & DIR) != 0)
             {
@@ -268,11 +270,25 @@ static class Scanner
                 long[] direct;
                 if (!n.DirectExt.TryGetValue(ext, out direct)) n.DirectExt[ext] = direct = new long[2];
                 direct[0] += size; direct[1]++;
-                if (CollectExt) Stats.AddExt(Stats.ExtOf(name), size, 1);
+                // Live scans reconcile extension deltas from this directory at
+                // publication. Headless/non-live callers still aggregate here.
+                if (CollectExt && publication == null) Stats.AddExt(ext, size, 1);
                 if (Stats.WantsTop(size)) Stats.AddTop(new FileEntry { Dir = n, Name = name, Size = size, Modified = modified });
-                if (publication != null) publication.FileFound(n, size);
+                if (publication != null)
+                {
+                    pendingBytes += size; pendingFiles++;
+                    if (pendingFiles == 64)
+                    {
+                        publication.FilesFound(n, pendingBytes, pendingFiles);
+                        pendingBytes = pendingFiles = 0;
+                    }
+                }
             }
-        });
+        }); }
+        finally
+        {
+            if (publication != null && pendingFiles != 0) publication.FilesFound(n, pendingBytes, pendingFiles);
+        }
         if (!ok) { n.Denied = true; DeniedCount++; }
 #if DISKWEFT_TEST
         if (publication != null && ScanSession.Enumerated != null) ScanSession.Enumerated(publication, n);

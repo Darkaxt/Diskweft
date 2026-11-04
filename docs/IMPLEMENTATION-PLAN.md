@@ -12,7 +12,7 @@ Updated: 2026-11-04. Current authorization: complete through S5,
 | S1 - Independent identity and classic live scanning | COMPLETE | Real folder/UNC scan -> consistent live tree/statistics -> navigation -> correct terminal result, with independent Diskweft identities | ID-01; SCAN-01,03..07 for classic; COMPAT-01 for affected classic paths |
 | S2 - Progressive NTFS/MFT scanning | COMPLETE | Real volume -> progressive resolved folders/statistics -> navigation -> final result; safe fallback and all-drives integration | SCAN-02; SCAN-03..07 for MFT/mixed scans; affected COMPAT-01, VERIFY-01 |
 | S3 - Windows 11 appearance and accents | COMPLETE | Native light/dark/high-contrast UI, Appearance persistence and live accent/theme changes across completed scan workflows | UI-01..04 |
-| S4 - Integrated verification and final delivery | NOT STARTED | Full specification reconciliation, compatibility/performance evidence, verified final commit and independently retrieved normal release | PERF-01, VERIFY-01, DELIVER-01; integrated ID/SCAN/UI/COMPAT acceptance |
+| S4 - Integrated verification and final delivery | BLOCKED | Full specification reconciliation, compatibility/performance evidence, verified final commit and independently retrieved normal release | PERF-01, VERIFY-01, DELIVER-01; integrated ID/SCAN/UI/COMPAT acceptance |
 | S5 - Replace installed SpaceScan with Diskweft | NOT STARTED | Verified Diskweft installation and preserved data, existing SpaceScan launch/integration routes replaced, rollback proved and obsolete owned registrations retired | MIGRATE-01 |
 
 Only one stage may be ACTIVE. S1 depends on S0; S2 on S1; S3 on S2; S4 on S3.
@@ -32,7 +32,7 @@ advance sequentially only after the current stage meets its acceptance criteria.
 
 S0 reconciliation: ENV-01..04 satisfied and verified. No remaining S0 acceptance
 criteria, blockers or tracked deferrals. S0-S3 are COMPLETE.
-S4-S5 remain NOT STARTED.
+S4 is BLOCKED; S5 remains NOT STARTED.
 Evidence: [S0 baseline](verification/S0-BASELINE.md).
 
 ## S1 current reconciliation
@@ -76,7 +76,52 @@ and its Coordinator lease was released. After retaining required evidence,
 cleanup transaction `29e0594183ec4d4e47dc96cb2ee3218e` applied signed manifest
 `0194e86403d0189c7eda006441ececbb231a967aaf672dfe99f17e16821f9b95`:
 711 members / 26,475,359 logical bytes removed with no errors/exclusions/residuals.
-Exact E: test and D: native-build roots were confirmed absent. S4/S5 have not begun.
+Exact E: test and D: native-build roots were confirmed absent. S4 subsequently
+became ACTIVE; S5 has not begun.
+
+S4 current reconciliation: BLOCKED on externally unavailable administrator
+execution. All independent preparation and task cleanup are finished. The
+million-file classic ratio of medians (+4.2851%) and median paired increase
+(+6.3500%), bounded mailbox, native latency (p95 3.0725 ms and first useful WPF
+results 629.9809 ms from scan start),
+real UNC/ACL/long-path/cancel/report/history regression and
+normal installed/portable candidate workflows pass. See
+[S4 evidence](verification/S4-INTEGRATED-DELIVERY.md). No product release exists.
+PERF-01's three paired raw-NTFS runs are externally blocked: broker request
+`4924a5a003cf4ba89ac410cbaa7e3134` returned `fullscreen_active`, launched=false.
+The user must return and direct a fresh request; do not retry automatically.
+DELIVER-01 depends on that measurement and final reconciliation, publication and
+independent asset retrieval. S5 remains NOT STARTED behind verified delivery.
+
+The current benchmark is retained at `.local/s4/benchmark/` for that required
+NTFS comparison; its RETENTION.json records purpose/hash. On renewed direction,
+submit the broker command `scripts/Invoke-PerformanceChecks.ps1 -Mode Ntfs
+-BuildRoot D:/Projects/Diskweft/.local/s4/benchmark`, binding that benchmark and
+the retained baseline. Observe the original command result; fix any failed limit
+before publication. Candidate packages stay in `dist/0.1.0-final-candidate` and
+are unpublished.
+
+The final S4 Sandbox `bf80b4a0-20ff-42b1-bd8d-b5508984de5d` completed the current
+optimized native/package workflow, exited 0 and released its lease with exact
+guest exit verified. Earlier Sandbox `ff6e79fa-4e6f-4333-973c-81fb6e9933ea` also
+exited; its aggregate exit 1 includes diagnosed harness errors and is not counted
+as the final green workflow.
+The fallback-only extension snapshot correction passed its real denied-MFT
+mixed-source regression and final normal-package revalidation in owned guest
+`11f24250-06a5-4ab7-9ac7-6f92f79df5e4`. It does not change the verified ordinary
+million-file scan path. Current package hashes are in the S4 evidence document.
+Cleanup transaction `ce60ad68c2573d5372bb70cc9c4a4212` owns exact
+`D:/Temp/Diskweft-s4-fixture`, `D:/Temp/Diskweft-s4-build` and
+`E:/Temp/Diskweft-s4-20261104`. Its 1,005,525 signed members were inspected through
+supported sequential pages. It removed 1,005,523 members / 760,498,758 logical
+bytes; two parents were protected because late diagnostics remained. Fresh exact
+residual transaction `8c3a90d6dab8031bb5ec06417ed66506` removed 4,295 members /
+208,067 bytes. The original ticket then closed as applied (the two parents were
+already absent). No errors or exclusions remain; every exact D:/E: scratch root
+was independently confirmed absent. Superseded candidates and the separate final
+package guest scratch were also transactionally removed. Current candidate,
+baseline, pending benchmark and required evidence remain intentionally retained
+outside disposable roots. No required work has been reclassified as a deferral.
 
 ### S1 - Independent identity and classic live scanning
 

@@ -4,7 +4,9 @@ Read `docs/SPECIFICATION.md` first. It is authoritative. Maintain stage status
 and requirement reconciliation in `docs/IMPLEMENTATION-PLAN.md`.
 
 - The user authorized completion through S5 on 2026-11-04. S0-S3 are COMPLETE;
-  S4-S5 remain NOT STARTED. Continue through the remaining
+  S4 is BLOCKED on the administrator broker's fullscreen quiet mode; S5 remains
+  NOT STARTED. On renewed user readiness, resume S4 through the broker before
+  continuing through the remaining
   authorized stages, closing each before advancing.
   S4 owns final release; S5 owns the authorized installed-system replacement.
 - Keep at most one ACTIVE stage. Validate complete specified workflows rather
@@ -21,8 +23,9 @@ and requirement reconciliation in `docs/IMPLEMENTATION-PLAN.md`.
 - Windows 11 and the supplied Explorer reference govern appearance. Use Huashu
   guidance for scan-specific presentation where native conventions do not apply;
   it does not add an approval checkpoint or override the requested design.
-- Do not change Pathweft. Its active checkout is reference context, not an
-  authorized editing target or a source of unverified shared implementation.
+- Before S5, Pathweft is reference context; preserve its active checkout and
+  settings. S5 may update only an actual SpaceScan caller route established by
+  fresh migration inventory. It does not authorize unrelated Pathweft development.
 - Use the installed execution/cleanup gates required by the user's standing
   instructions. Do not bypass administrator consent for MFT verification.
 - `.local/` is ignored private evidence and retained baseline assets. Generated

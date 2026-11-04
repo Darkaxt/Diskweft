@@ -25,9 +25,9 @@ using WinForms = System.Windows.Forms;
 [assembly: System.Reflection.AssemblyProduct("Diskweft")]
 [assembly: System.Reflection.AssemblyCompany("Darkaxt")]
 [assembly: System.Reflection.AssemblyCopyright("MIT; Protagonist Labs and Darkaxt")]
-[assembly: System.Reflection.AssemblyVersion("0.0.3")]
-[assembly: System.Reflection.AssemblyFileVersion("0.0.3")]
-[assembly: System.Reflection.AssemblyInformationalVersion("0.0.3-stage3-development")]
+[assembly: System.Reflection.AssemblyVersion("0.1.0")]
+[assembly: System.Reflection.AssemblyFileVersion("0.1.0")]
+[assembly: System.Reflection.AssemblyInformationalVersion("0.1.0")]
 
 // The folder the Protagonist Labs apps share on this PC (%APPDATA%\ProtagonistLabs): each app writes its card in
 // apps\, and what it offers the others in data\. Diskweft writes its card, and reads Shelf's games, to name their
@@ -319,12 +319,13 @@ static class Updater
         return path;
     }
 
-    /// <summary>Starts the installer through the shell, elevated: Diskweft installs per machine since 1.4.0. The
-    /// installer stops this process and starts the new version when it is done (its [Run] entry for a silent install);
+    /// <summary>Starts Setup as the user; Setup requests its own administrator token and can
+    /// restart the app as the original user. The
+    /// installer stops this process and starts the new version when it is done;
     /// the caller closes right after. Throws Win32Exception when the user says no to UAC: nothing changed then.</summary>
     internal static void Install(string installer)
     {
-        Process.Start(new ProcessStartInfo(installer, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART") { UseShellExecute = true, Verb = "runas" });
+        Process.Start(new ProcessStartInfo(installer, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART") { UseShellExecute = true });
     }
 }
 

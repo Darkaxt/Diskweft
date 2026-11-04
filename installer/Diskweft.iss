@@ -50,4 +50,14 @@ Root: HKCU; Subkey: "Software\Classes\Drive\shell\Diskweft\command"; ValueType: 
 Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\Diskweft"; ValueType: string; ValueData: "Scan with Diskweft"; Tasks: shellmenu; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\Diskweft\command"; ValueType: string; ValueData: """{app}\Diskweft.exe"" ""%V"""; Tasks: shellmenu; Flags: uninsdeletekey
 [Run]
-Filename: "{app}\Diskweft.exe"; Description: "Start Diskweft"; Flags: nowait postinstall skipifsilent runasoriginaluser
+Filename: "{app}\Diskweft.exe"; Description: "Start Diskweft"; Flags: nowait postinstall runasoriginaluser; Check: ShouldLaunch
+[Code]
+function ShouldLaunch: Boolean;
+var
+  I: Integer;
+begin
+  Result := True;
+  for I := 1 to ParamCount do
+    if CompareText(ParamStr(I), '/NOLAUNCH') = 0 then
+      Result := False;
+end;

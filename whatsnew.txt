@@ -1,6 +1,14 @@
 # Diskweft development notes, followed by retained upstream SpaceScan history.
 # "## version | yyyy-MM-dd | title", then the release's lines: "**Heading**", "- point", or a plain paragraph.
 
+## 0.1.0 | 2026-11-04 | Live disk usage with Windows appearance
+- Folder totals, recursive counts and file statistics update while classic and NTFS/MFT scans run.
+- Expand folders and select results during scanning; stop, restart and rescan without mixing generations.
+- Pending, inaccessible, stopped and incomplete results retain their provenance. Largest-file results stay bounded.
+- Windows app light/dark preference and accent colors, persisted app overrides, high contrast and visible keyboard focus.
+- Independent Diskweft profiles, history, shell entries, installer and updater. Existing SpaceScan data is preserved; system replacement is a separately verified migration.
+- Windows 11 and .NET Framework. Installer and portable packages include the per-monitor DPI configuration and MIT notice. Binaries are unsigned.
+
 ## 0.0.1 | 2026-10-30 | Stage 1 development snapshot
 - Independent Diskweft identity and live classic folder results.
 - Stable navigation, partial statistics, stop/restart and subtree rescans.

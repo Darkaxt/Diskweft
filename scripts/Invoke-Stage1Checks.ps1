@@ -3,7 +3,8 @@ param(
     [Parameter(Mandatory = $true)][string]$ScratchRoot,
     [Parameter(Mandatory = $true)][string]$BuildRoot,
     [string]$NetworkFixture,
-    [switch]$CompileOnly
+    [switch]$CompileOnly,
+    [switch]$CoreOnly
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -24,7 +25,8 @@ try {
     & (Join-Path $PSScriptRoot 'Build-Development.ps1') -OutputDirectory $build -Test
     $runRoot = Join-Path $scratch ('acceptance-' + [Guid]::NewGuid().ToString('N'))
     $env:DISKWEFT_NETWORK_FIXTURE = $NetworkFixture
-    & (Join-Path $build 'Diskweft.Tests.exe') $runRoot
+    if ($CoreOnly) { & (Join-Path $build 'Diskweft.Tests.exe') $runRoot --core }
+    else { & (Join-Path $build 'Diskweft.Tests.exe') $runRoot }
     if ($LASTEXITCODE -ne 0) { throw "S1 acceptance failed. Inspect $runRoot\result.json" }
     Write-Output "Inspected acceptance evidence: $runRoot"
 } finally {

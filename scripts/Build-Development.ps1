@@ -3,7 +3,7 @@ param(
     [string]$OutputDirectory,
     [switch]$Diagnostics,
     [switch]$Test,
-    [ValidateSet('Stage1Tests','Stage2Tests','Stage3Tests')][string]$TestEntry = 'Stage1Tests'
+    [ValidateSet('Stage1Tests','Stage2Tests','Stage3Tests','Stage4Bench')][string]$TestEntry = 'Stage1Tests'
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -25,7 +25,7 @@ $arguments = @('/nologo', "/target:$target", '/optimize', '/platform:anycpu', '/
     "/resource:$projectRoot\WhatsNew\m10.jpg,WhatsNew.m10.jpg", "/out:$outputRoot\$name",
     "$projectRoot\SpaceScan.cs", "$projectRoot\MftProgress.cs", "$projectRoot\MftStreaming.cs", "$projectRoot\LiveScan.cs", "$projectRoot\ClassicUI.cs", "$projectRoot\Diagnostics.cs", "$projectRoot\Appearance.cs", "$projectRoot\App.cs", "$projectRoot\WhatsNew.cs")
 if ($Diagnostics -or $Test) { $arguments += '/define:DISKWEFT_TEST' }
-if ($Test) { $arguments += "/main:$TestEntry"; $arguments += "$projectRoot\tests\Stage1Tests.cs"; $arguments += "$projectRoot\tests\Stage2Tests.cs"; $arguments += "$projectRoot\tests\Stage3Tests.cs" }
+if ($Test) { $arguments += "/main:$TestEntry"; $arguments += "$projectRoot\tests\Stage1Tests.cs"; $arguments += "$projectRoot\tests\Stage2Tests.cs"; $arguments += "$projectRoot\tests\Stage3Tests.cs"; $arguments += "$projectRoot\tests\Stage4Bench.cs" }
 & $compiler @arguments
 if ($LASTEXITCODE -ne 0) { throw 'Diskweft compilation failed.' }
 Copy-Item -LiteralPath (Join-Path $projectRoot 'app.config') -Destination (Join-Path $outputRoot ($name + '.config'))
