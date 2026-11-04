@@ -3,11 +3,10 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative. Maintain stage status
 and requirement reconciliation in `docs/IMPLEMENTATION-PLAN.md`.
 
-- The user authorized completion through S5 on 2026-11-04. S0-S3 are COMPLETE;
-  S4 is ACTIVE again to fix the first-launch missing-banner defect found in S5.
-  S5 is BLOCKED/parked until verified normal maintenance release0.1.1.
-  Continue through the remaining
-  authorized stages, closing each before advancing.
+- The user authorized completion through S5 on 2026-11-04. S0-S5 are COMPLETE.
+  Normal v0.1.1 is published, independently retrieved, installed and verified;
+  SpaceScan is uninstalled with original data and recovery material preserved.
+  See the S4/S5 verification records before repeating any one-time migration.
   S4 owns final release; S5 owns the authorized installed-system replacement.
 - Keep at most one ACTIVE stage. Validate complete specified workflows rather
   than treating individual components or passing tests as delivered features.
@@ -31,5 +30,5 @@ and requirement reconciliation in `docs/IMPLEMENTATION-PLAN.md`.
 - `.local/` is ignored private evidence and retained baseline assets. Generated
   expendable fixtures use exact task scratch and transactional cleanup.
 - No intermediate product releases. S4 owns the final verified Diskweft release.
-- S5 owns the later requested system replacement of installed SpaceScan, including
+- S5 owns the requested system replacement of installed SpaceScan, including
   actual consumer inventory, preserved settings/history, route changes and rollback.

@@ -5,23 +5,25 @@ A Windows disk-usage explorer forked from
 results and Windows 11 appearance. The name complements
 [Pathweft](https://github.com/Darkaxt/Pathweft), a separate file-manager project.
 
-**Development status:** S0-S3 are COMPLETE. Independent identity and progressive
+**Development status:** S0-S5 are COMPLETE. Independent identity and progressive
 classic/MFT scanning are implemented and verified, including real elevated NTFS.
 Windows themes, accent settings and native layout verification passed;
 see the [S3 evidence](docs/verification/S3-WINDOWS-APPEARANCE.md).
-S4 is ACTIVE for0.1.1: automatic largest-first live ordering, closer Explorer
-colors, Windows-blue usage bars and a first-launch release-notes correction.
-Native verification passes; normal publication/retrieval remains. S5 is parked
-until that corrected delivery. Both scanner comparisons pass the10% median limit.
+The verified [v0.1.1 release](https://github.com/Darkaxt/Diskweft/releases/tag/v0.1.1)
+includes automatic largest-first live ordering, closer Explorer colors,
+Windows-blue usage bars and a first-launch release-notes correction.
+Both scanner comparisons pass the 10% median limit.
 See the [S4 ledger](docs/verification/S4-INTEGRATED-DELIVERY.md).
-S4 owns final delivery; S5 owns the planned system
-replacement of installed SpaceScan after that verified release.
+The authorized system replacement is verified: Diskweft 0.1.1 installed,
+SpaceScan uninstalled, original history preserved and recovery material checked.
+Pathweft integration remains with its owner. See the
+[S5 verification](docs/verification/S5-SYSTEM-REPLACEMENT.md).
 
 - [Authoritative specification](docs/SPECIFICATION.md)
 - [Staged plan and current reconciliation](docs/IMPLEMENTATION-PLAN.md)
 - [Development and baseline verification](docs/DEVELOPMENT.md)
 
-The planned outcome includes live folder sizes, file counts and statistics for
+Diskweft provides live folder sizes, file counts and statistics for
 both ordinary traversal and NTFS/MFT scans, stable navigation during scanning,
 honest partial-result states, and restrained Windows light/dark themes with accent
 support. Existing search, duplicate detection, history, reports and file actions

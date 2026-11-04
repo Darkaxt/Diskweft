@@ -1,6 +1,6 @@
 # Diskweft specification
 
-Version 0.7 - 2026-11-04. Owner: Darkaxt.
+Version 0.8 - 2026-11-04. Owner: Darkaxt.
 
 This is the authoritative specification. The implementation plan cannot weaken
 its behavior, constraints or acceptance criteria. The user's standing engineering
@@ -20,10 +20,10 @@ independent identity and complete classic live-scanning workflow, including its
 integration, verification, commit and source synchronization. S1 is COMPLETE.
 The 2026-11-04 instruction, "You may start working on this all the way in",
 authorizes completing S2-S5, including final release and system replacement.
-S0-S3 are COMPLETE. S4 is ACTIVE again for the first-launch release-notes defect
-found during actual S5 installation/profile verification. S5 is BLOCKED/parked
-until the corrected normal maintenance release passes its delivery gate. This
-repairs the same required startup behavior; it adds no product scope. No intermediate product release is
+S0-S5 are COMPLETE. Independently verified normal maintenance v0.1.1 corrected
+the first-launch defect and included the explicit live-sort/color requirements.
+The actual installed release, preserved history, recovery material and SpaceScan
+retirement passed S5 reconciliation. No intermediate product release is
 authorized. The standing final-release rule applies in S4 after the whole
 product scope and its prerequisite verification pass.
 
@@ -146,7 +146,8 @@ cancelled file listing or obsolete MFT batch cannot alter the next scan.
 - In dark mode, begin from the supplied reference's near-black content and
   slightly lighter command/header surfaces; light mode uses corresponding
   neutral whites/grays. These are design directions, not sampled exact pixels.
-- Accent identifies primary actions, focus, selection and data bars sparingly.
+- Accent identifies primary actions and focus sparingly. UI-05 specifies neutral
+  selection and Windows-blue capacity bars for the updated Explorer reference.
   Regular text remains neutral. Text contrast >=4.5:1; interactive/non-text
   indicators >=3:1 where applicable. Preserve contrast for very light/dark custom
   accents and never encode completeness solely by color.

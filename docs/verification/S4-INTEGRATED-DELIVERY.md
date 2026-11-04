@@ -1,7 +1,7 @@
 # S4 integrated verification and delivery
 
-2026-11-04. S0-S3 COMPLETE; S4 ACTIVE again; S5 BLOCKED/parked pending corrected
-release0.1.1. Initial0.1.0 publication was independently verified, then actual
+2026-11-04. S0-S5 COMPLETE after verified corrected normal v0.1.1 and system replacement.
+Initial0.1.0 publication was independently verified, then actual
 installed-profile startup exposed a missing-banner defect. The user also requested
 live largest-first ordering and closer Explorer colors without layout changes.
 
@@ -43,10 +43,15 @@ live largest-first ordering and closer Explorer colors without layout changes.
   portable4cf754a4f34879ad18a51c137ef505294ca448b848a988b77f3774f5b1bf105a.
   MIT/config included, Authenticode NotSigned. Current output dist/0.1.1.
 
-Remaining internal S4 blocker: publish/retrieve/verify this normal maintenance
-release against the verified source commit. S5 resumes only after delivery;
-original SpaceScan remains installed and its data/recovery intact. Pathweft
-integration is explicitly left to the user. No tracked deferrals.
+DELIVER-01 PASS: normal v0.1.1 release434123183, published2026-11-04T15:42:37Z,
+draft=false/prerelease=false, target/tag76dd613b514ef9ab32744609de32972407581560.
+Bridge independently read back state/assets/digests; gh downloaded both packages
+and SHA256SUMS again. Both asset hashes, manifest, extracted executable version,
+config/MIT/signature and actual downloaded native/CLI workflow pass. Setup is
+NotSigned and byte-identical to the guest-tested installer. S4 has no remaining
+blockers/deferrals. S5 subsequently passed actual installed verification and
+SpaceScan retirement; see [S5 verification](S5-SYSTEM-REPLACEMENT.md).
+Original data/recovery are intact and Pathweft integration stays with the user.
 
 Closure assessment for the correction: sorting reuses row identities and moves
 only the visible projection; scan ownership and producer data are unchanged.
@@ -126,10 +131,10 @@ original-user launch correction; Setup keeps runasoriginaluser and /NOLAUNCH for
 managed installation. No unrelated donation UI. Interactive updater token changes
 are not claimed verified by the SYSTEM guest; actual installed launch belongs S5.
 
-## Packages and pending delivery
+## Initial 0.1.0 packages and delivery
 
 Version0.1.0; Inno Setup6.7.4; MIT included; Authenticode NotSigned.
-Current output `dist/0.1.0`; earlier candidates superseded and unpublished.
+Retained historical output `dist/0.1.0`; current release output is `dist/0.1.1`.
 
 | Item | SHA-256 |
 | --- | --- |

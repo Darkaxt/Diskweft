@@ -1,262 +1,166 @@
-# Diskweft implementation plan and reconciliation
+# Diskweft staged implementation and reconciliation
 
-Authoritative source: [SPECIFICATION.md](SPECIFICATION.md), version 0.7.
-Updated: 2026-11-04. Current authorization: complete through S5,
-"You may start working on this all the way in" (`already_authorized`).
+Updated: 2026-11-04. Authoritative requirements: [SPECIFICATION.md](SPECIFICATION.md).
+Authorization: complete through S5, including final release and actual system
+replacement (`already_authorized`). Pathweft integration is expressly excluded
+by the user; its source/runtime/caller remain unchanged.
 
-## Stage map
+## Stage map and final reconciliation
 
-| Stage | Status | Complete specified outcome | Requirement ownership |
+| Stage | Status | Verified specified outcome | Requirement ownership |
 | --- | --- | --- | --- |
-| S0 - Fork, specification and reproducible baseline | COMPLETE | Public named fork, owned checkout, complete requirements/stage map, inspected baseline build/scanner evidence and published setup documents | ENV-01..04 |
-| S1 - Independent identity and classic live scanning | COMPLETE | Real folder/UNC scan -> consistent live tree/statistics -> navigation -> correct terminal result, with independent Diskweft identities | ID-01; SCAN-01,03..07 for classic; COMPAT-01 for affected classic paths |
-| S2 - Progressive NTFS/MFT scanning | COMPLETE | Real volume -> progressive resolved folders/statistics -> navigation -> final result; safe fallback and all-drives integration | SCAN-02; SCAN-03..07 for MFT/mixed scans; affected COMPAT-01, VERIFY-01 |
-| S3 - Windows 11 appearance and accents | COMPLETE | Native light/dark/high-contrast UI, Appearance persistence and live accent/theme changes across completed scan workflows | UI-01..04 |
-| S4 - Integrated verification and final delivery | ACTIVE | Full specification reconciliation, compatibility/performance evidence, verified final commit and independently retrieved normal release | PERF-01, VERIFY-01, DELIVER-01, UI-05; integrated ID/SCAN/UI/COMPAT acceptance |
-| S5 - Replace installed SpaceScan with Diskweft | BLOCKED | Verified Diskweft installation and preserved data, existing SpaceScan launch/integration routes replaced, rollback proved and obsolete owned registrations retired | MIGRATE-01 |
+| S0 - Fork, specification and baseline | COMPLETE | Public named fork, owned checkout/remotes, requirement map, controlled baseline and setup publication | ENV-01..04 |
+| S1 - Identity and classic live scanning | COMPLETE | Real folder/UNC -> live tree/statistics -> stable native navigation -> correct terminal results, independent identities | ID-01; SCAN-01,03..07 for classic; affected COMPAT-01 |
+| S2 - Progressive NTFS/MFT | COMPLETE | Actual elevated raw NTFS -> useful live folders/statistics -> native navigation -> terminal reconciliation; fallback/all-drives integrated | SCAN-02; MFT/mixed SCAN-03..07; affected COMPAT-01, VERIFY-01 |
+| S3 - Windows appearance | COMPLETE | Actual native themes/accents/high contrast, persistence, Windows notifications and layout/DPI acceptance | UI-01..04 |
+| S4 - Integrated verification and product delivery | COMPLETE | Compatibility/performance acceptance; corrected normal v0.1.1 independently delivered, including live order and Explorer colors | PERF-01, VERIFY-01, DELIVER-01, UI-05; integrated ID/SCAN/UI/COMPAT |
+| S5 - Installed system replacement | COMPLETE | Installed 0.1.1 launch/classic/raw NTFS/history/routes verified; data/recovery preserved; SpaceScan uninstalled and obsolete registrations retired | MIGRATE-01 |
 
-Only one stage may be ACTIVE. S1 depends on S0; S2 on S1; S3 on S2; S4 on S3.
-S5 depends on the verified S4 release and a fresh installation/consumer inventory.
-User scope change2026-11-04: Pathweft integration belongs to the user. Preserve
-its caller/source/runtime unchanged; this is an explicit exclusion, not a deferral.
-No release follows an individual feature stage. S0's docs/source publication is
-setup delivery, not a Diskweft product release. Execution through S5 is authorized;
-advance sequentially only after the current stage meets its acceptance criteria.
+All assigned acceptance criteria are satisfied and verified. Remaining criteria:
+none. Blockers: none. Tracked deferrals: none. No stage is ACTIVE or BLOCKED.
 
-## S0 acceptance
+Execution order was S0 -> S1 -> S2 -> S3 -> S4 -> S5, with at most one ACTIVE
+stage. Actual S5 first launch exposed a release-notes defect: S5 was parked,
+S4 reopened for that correction plus explicit user live-order/color requirements,
+then S5 resumed only after corrected release delivery passed. No incomplete feature
+stage triggered publication. S4 owns product release; S5 owns the separate expressly
+authorized installed-system rollout.
 
-| Criterion | Required evidence | Current result |
-| --- | --- | --- |
-| ENV-01 | GitHub fork visibility, parent and preserved upstream source commit | Fork created; bridge/gh read-back confirms public fork and parent |
-| ENV-02 | Local checkout/remotes/default GitHub target; committed setup and matching remote HEAD | PASS: setup commit 1e493151734f93eda414031074aa590c5f83b023 independently read back through GitHub bridge and git ls-remote; tracked worktree clean |
-| ENV-03 | Existing upstream build, actual version/hash, controlled scanner totals/exclusion/stats/pre-cancelled results; no production-code changes | PASS: existing build and controlled checks exited 0; source unchanged; see verification/S0-BASELINE.md |
-| ENV-04 | Complete mapping, design/verification contract, development notes, actual evidence, private reference handling and scratch cleanup | PASS: committed/published documents and helpers read back; all requirements assigned; private reference ignored; fixture/preflight cleanup applied |
+## Acceptance evidence
 
-S0 reconciliation: ENV-01..04 satisfied and verified. No remaining S0 acceptance
-criteria, blockers or tracked deferrals. S0-S3 are COMPLETE; S4 is ACTIVE again;
-S5 is BLOCKED/parked behind its corrected-release dependency.
-Evidence: [S0 baseline](verification/S0-BASELINE.md).
+### S0 - Fork and baseline
 
-## S1 current reconciliation
+ENV-01..04 PASS: public fork/parent verified through GitHub; maintained D: checkout,
+origin/upstream/default target, controlled baseline, private references, specification/
+design/development artifacts and cleanup verified. Setup commit
+`1e493151734f93eda414031074aa590c5f83b023` was pushed and independently read back.
+No production-code change or inherited GUI/installer launch counted as S0.
+See [S0 evidence](verification/S0-BASELINE.md).
 
-| Criterion | S1 result and evidence |
+### S1 - Classic live scanning and identity
+
+| Criteria | Verified complete workflows |
 | --- | --- |
-| ID-01 | PASS: independent executable/icon/profile/registry/card/updater and installer-source identity. Isolated upstream/Pathweft sentinels and actual upstream bindings preserved; normal build omits diagnostic actions. Installer execution/package acceptance remains S4. |
-| SCAN-01,03 | PASS: real filesystem partial ancestor totals, coalesced publication and bounded 2,100-file case; exact controlled final results and real UNC scan. |
-| SCAN-04 | PASS: native Stop/restart, failure terminal state, real denied-MFT fallback, late old-generation listing rejection and owned-thread shutdown. Subtree completion cannot promote a stopped tree to complete history. |
-| SCAN-05 | PASS: native keyboard expansion, async listing, directory/file selection and real virtualized scrolling persist through updates and final relisting. |
-| SCAN-06,07 | PASS: partial extension/top-file publication, pending/inaccessible/stopped cues, discovered-byte shares and partial snapshot provenance. |
-| affected COMPAT-01 | PASS: name/path exclusions, native long paths, real fixture ACL denial/restoration, existing reparse exclusion, search, duplicate hashing, snapshots/compare/history, CSV/HTML/CLI and busy destructive-key refusal. |
+| ID-01 | Independent executable/metadata/icon/profile/history/registry/card/updater/installer; upstream and Pathweft sentinels preserved; normal build omits diagnostic actions. Package isolation reverified in S4. |
+| SCAN-01,03 | Real growing ancestor totals, coalesced bounded publication, exact final fixture results and real UNC scan. |
+| SCAN-04 | Stop/restart/failure, real denied-MFT fallback, stale listing rejection and worker shutdown. Stopped subtree cannot become complete history. |
+| SCAN-05 | Native keyboard expansion, asynchronous listings, file/folder selection and virtualized scrolling survive updates/final relisting. Largest-first live-order acceptance completed in S4. |
+| SCAN-06,07 | Partial extension/top-file publication, pending/inaccessible/stopped cues, discovered-byte shares and partial snapshot provenance. |
+| COMPAT-01 affected paths | Exclusions, native long paths, real ACL denial/restoration, reparse exclusion, search/duplicate hashing, snapshots/compare/history, reports/CLI and busy destructive-key refusal. |
 
-Current evidence: [S1 verification](verification/S1-CLASSIC-LIVE.md). Every assigned
-criterion is satisfied. Source/evidence commit
-`36e4f3a6d0ceac7758573344953d3b3f515f9cea` was pushed and independently read back
-through the GitHub bridge, with matching remote HEAD and key source/document blobs.
-S1 is COMPLETE with no remaining acceptance criteria, blockers or tracked
-deferrals. No product release belongs to S1. The system-replacement stage is
-documented, not started.
+See [S1 evidence](verification/S1-CLASSIC-LIVE.md). Commit
+`36e4f3a6d0ceac7758573344953d3b3f515f9cea` was pushed and independently read back.
+No product release belongs to S1.
 
-## Later-stage acceptance and verification
+### S2 - Progressive MFT
 
-S2 reconciliation: SCAN-02 and the MFT/mixed portions of SCAN-03..07, affected
-COMPAT-01 and current-stage VERIFY-01 passed. Actual elevated raw NTFS -> live
-native folders/statistics -> expand/list/select -> terminal result, fallback,
-stop/restart and separate-volume mixed roots were verified. Current-source raw
-record regressions cover ordering, late exclusions, unresolved provenance,
-extent correction and same-numbered records across volumes. Classic/UNC and
-normal-build identity/CLI regression passed. See
-[S2 verification](verification/S2-PROGRESSIVE-MFT.md). No remaining S2 acceptance
-criteria, blockers or tracked deferrals. S3 now owns appearance acceptance.
+SCAN-02, MFT/mixed SCAN-03..07 and affected COMPAT-01/VERIFY-01 PASS: actual
+elevated raw NTFS -> live native folders/statistics -> expand/list/select ->
+terminal result; real fallback, cancel/restart and separate-volume mixed roots.
+Record regressions cover reordered parents, late exclusions, unresolved provenance,
+extent correction and same-numbered records across volumes. Classic/UNC and normal
+identity/CLI checks passed. Synthetic records supplemented real boundaries.
+See [S2 evidence](verification/S2-PROGRESSIVE-MFT.md).
 
-S3 reconciliation: UI-01..04 PASS. Real native Settings, light/dark/accent/high
-contrast, keyboard focus, live HWND notifications, restart persistence, measured
-client layouts and real WPF DPI transforms passed. Existing native classic
-navigation/scroll/history and normal CLI/identity regression passed. See
-[S3 evidence and coverage limits](verification/S3-WINDOWS-APPEARANCE.md).
-No remaining S3 criteria, blockers or tracked deferrals. The owned guest exited
-and its Coordinator lease was released. After retaining required evidence,
-cleanup transaction `29e0594183ec4d4e47dc96cb2ee3218e` applied signed manifest
-`0194e86403d0189c7eda006441ececbb231a967aaf672dfe99f17e16821f9b95`:
-711 members / 26,475,359 logical bytes removed with no errors/exclusions/residuals.
-Exact E: test and D: native-build roots were confirmed absent. S4 subsequently
-became ACTIVE; S5 has not begun.
+### S3 - Native appearance
 
-S4 reconciliation: ACTIVE again. First actual installed launch with existing
-profile0.0.1 opens the new0.1.0 notes; no November banner is embedded, and Banner
-initializes BitmapImage with a null stream. UI-04/COMPAT-01/DELIVER-01 are blocked
-internally until missing-image notes render safely and maintenance0.1.1 is
-published/retrieved/verified. S5 is parked: copied data/recovery are preserved,
-SpaceScan remains installed and Pathweft untouched. PERF-01 remains applicable:
+UI-01..04 PASS: actual Settings, light/dark/system/custom accents/high contrast,
+keyboard focus, Windows HWND notifications, restart persistence, measured layouts
+and WPF DPI transforms. Classic navigation/scroll/history and normal CLI identity
+passed. See [S3 evidence and limits](verification/S3-WINDOWS-APPEARANCE.md).
+Owned guest exit/lease release verified; cleanup removed 711 members / 26,475,359
+logical bytes without residuals (`29e0594183ec4d4e47dc96cb2ee3218e`).
 
-The user also authorized automatic largest-first live sibling ordering and
-Explorer color parity without layout changes, including blue usage bars. These
-are current S4 SCAN-05/UI-05 requirements. Both red reproductions and corrected
-native workflows pass. Current actual1.19-million-file NTFS UI p95 is39.589 ms;
-first useful WPF533.3272 ms. Native palette/layout/notifications/persistence and
-normal installed/portable/uninstall checks pass; actual host caption captured.
-S5 migration is preserved: exact legacy history copied and loaded by both original
-recovery and installed readers, legacy-unknown provenance, recovery hashes and
-controlled execution of the recovered original scanner passed. Pathweft excluded.
-classic baseline/fork medians 781.7848 / 808.9633 ms (+3.4765%, same paired median),
-NTFS 1,863.1023 / 1,949.3709 ms (+4.6304%, same paired median). Each comparison has
-three alternating paired runs after warm-up. Classic uses identical process-only
-CPU0 affinity on the hybrid host; initial unrestricted timing varied and missed
-the gate (+26.3743%). That failed result remains recorded rather than discarded.
-Current real million-file native WPF results: first useful view 588.744 ms from
-scan start, 557.4034 ms from useful producer metadata; dispatcher p95 12.3885 ms,
-160 samples, exact final totals and real navigation, zero owned workers at idle.
-The new raw reader has two fixed buffers, one serialized reader and guaranteed
-join before handle close. Real MFT query and scan/cancel/restart/mixed-root
-checks passed under request `9842ce6358bd4b928344517ef63b634d` (exit 0).
+### S4 - Integrated verification and delivery
 
-Initial DELIVER-01 evidence: normal v0.1.0 published on Darkaxt/Diskweft with installer,
-portable and SHA256SUMS, tag/source commit cb5c0f59866d6e460946786eee221b2d4f76afbe.
-GitHub bridge independently read back publication and assets; gh downloaded them
-again. Package hashes, extracted version/configuration/MIT, signature status and
-actual downloaded portable native/CLI behavior passed. The identical installer
-hash passed installed native/CLI/uninstall in the owned guest. The discovered
-startup defect and explicit user changes require maintenance0.1.1: publication
-and independent retrieval/verification remain internal S4 advancement blockers.
-S5 stays parked with installation/data/recovery preserved. No tracked deferrals.
-Current candidates are `dist/0.1.1`. See
-[S4 evidence](verification/S4-INTEGRATED-DELIVERY.md) for exact hashes and scope.
+PERF-01/VERIFY-01 and compatibility PASS. Three alternating paired runs after
+warm-up: classic baseline/fork medians 781.7848 / 808.9633 ms (+3.4765%),
+raw NTFS 1,863.1023 / 1,949.3709 ms (+4.6304%). Classic controls process-only CPU0
+affinity on this hybrid host; initial unrestricted +26.3743% failed and remains
+recorded. Peak memory/CPU/publication/backlog and boundaries are in
+[S4 evidence](verification/S4-INTEGRATED-DELIVERY.md).
 
-The earlier S4 Sandbox `bf80b4a0-20ff-42b1-bd8d-b5508984de5d` completed the prior
-optimized native/package workflow, exited 0 and released its lease with exact
-guest exit verified. Earlier Sandbox `ff6e79fa-4e6f-4333-973c-81fb6e9933ea` also
-exited; its aggregate exit 1 includes diagnosed harness errors and is not counted
-as the final green workflow.
-The fallback-only extension snapshot correction passed its real denied-MFT
-mixed-source regression and final normal-package revalidation in owned guest
-`11f24250-06a5-4ab7-9ac7-6f92f79df5e4`. It does not change the verified ordinary
-million-file scan path. Current package hashes are in the S4 evidence document.
-Cleanup transaction `ce60ad68c2573d5372bb70cc9c4a4212` owns exact
-`D:/Temp/Diskweft-s4-fixture`, `D:/Temp/Diskweft-s4-build` and
-`E:/Temp/Diskweft-s4-20261104`. Its 1,005,525 signed members were inspected through
-supported sequential pages. It removed 1,005,523 members / 760,498,758 logical
-bytes; two parents were protected because late diagnostics remained. Fresh exact
-residual transaction `8c3a90d6dab8031bb5ec06417ed66506` removed 4,295 members /
-208,067 bytes. The original ticket then closed as applied (the two parents were
-already absent). No errors or exclusions remain; every exact D:/E: scratch root
-was independently confirmed absent. Superseded candidates and the separate final
-package guest scratch were also transactionally removed. Current candidate,
-baseline, pending benchmark and required evidence remain intentionally retained
-outside disposable roots. New optimization scratch is registered in transaction
-`265f13bdd6ca51c127fcefbe951b05db`; all VHD mounts have verified detachment.
-Current package guest `c6bb37ee-0a40-4594-a517-d2443896fac6` passed current classic
-native and installed/portable/uninstall checks (exit0/isError=false), then exited
-with sandbox_exit_verified=true and released its lease. No required work is deferred.
-Optimization cleanup applied its inspected4,383-member signed manifest with no
-errors/exclusions; both exact scratch roots are absent. Retained private results
-and current versioned deliverables remain available for delivery verification.
+Current 0.1.1 real 1.19-million-file NTFS UI: useful metadata 115.612 ms, first
+useful WPF 533.3272 ms from start / 417.7152 ms after publication; dispatcher p95
+39.589 ms. Navigation, terminal reconciliation and zero workers passed. Actual raw
+cancel/restart/fallback/mixed-root checks passed. Scanner code is unchanged by
+0.1.1, so applicable paired scanner evidence remains valid.
 
-### S1 - Independent identity and classic live scanning
+SCAN-05/UI-05/startup correction PASS: both regressions reproduced red, then real
+native notes/live largest-first ordering passed with file selection, expansion and
+viewport anchor preserved. Actual Windows palette, dark readable caption, warmer
+command/address surface, neutral selection and blue capacity bars verified without
+layout redesign. Full native light/dark/custom accent/high contrast/layout/DPI/
+notifications/persistence passed. DWM colors are Set-only: successful setters and
+physical caption capture were used; unsupported Get was not claimed as readback.
 
-- Establish all identity boundaries before normal runtime trials. Inspect updater,
-  installer, shell/registry, profile/history and ecosystem-card ownership.
-- Implement the complete classic workflow: coalesced publications, parent totals,
-  live tree/stats, asynchronous navigation, stable rows and terminal reconciliation.
-- Cover folder, UNC/slow path, all-drives classic children and partial rescans.
-  Preserve existing file actions' safety and partial-history provenance.
-- Verify actual native actions while scanning, controlled exact final totals,
-  exclusions/reparse/long paths, cancellation, rapid restart and isolated profiles.
-- Reconcile every assigned SCAN/COMPAT criterion. Progressive MFT work remains S2;
-  S1 retains only per-directory extension metadata from existing MFT finalization
-  to seed correct subtree-rescan statistics. This does not satisfy SCAN-02.
+Final owned guest `6d2c71af-8721-4315-8a62-acbe6915e8b2` passed current native and
+normal installed/portable/uninstall workflows (exit0/isError=false). Aggregate guest
+exit1 includes an earlier unsupported headless-DWM assertion; exact guest exit and
+lease release were verified. No host fallback was used.
 
-### S2 - Progressive NTFS/MFT scanning
+DELIVER-01 PASS: normal published
+[v0.1.1](https://github.com/Darkaxt/Diskweft/releases/tag/v0.1.1), source/tag
+`76dd613b514ef9ab32744609de32972407581560`, release434123183, installer/portable/
+checksums present, draft=false/prerelease=false. Bridge read back state/assets/
+digests; gh independently retrieved packages. Actual downloaded native/CLI,
+version/hash/configuration/MIT/signature checks passed. Exact setup hash passed
+normal guest installation/uninstall and S5 host install. Authenticode: NotSigned.
+Initial 0.1.0 evidence is historical; corrected 0.1.1 is the supported release.
 
-- Keep raw parsing/runlist correctness; add resolved/pending directory accounting,
-  safe late exclusions and bounded publications during MFT reading.
-- Integrate live tree/stats/navigation and attempt-specific fallback in individual
-  and all-drives scans. Reconcile terminal totals without duplicate contributions.
-- Verify reordered parent records and exclusions with reproducible tests, then
-  real elevated NTFS, cancellation and genuine fallback. Synthetic records alone
-  cannot close the real-volume criterion.
-- Preserve classic acceptance; inspect actual capability/privilege results through
-  the required broker. Performance diagnostics inform implementation; S4 owns
-  the complete paired large-workload acceptance.
+### S5 - Actual system replacement
 
-### S3 - Windows 11 appearance and accents
+MIGRATE-01 PASS. Fresh inventory preceded mutation; independently delivered 0.1.1
+installed through broker consent. Actual installed EXE bare-path launch completed
+its classic scan and closed normally. Actual-profile native classic/raw NTFS,
+history lookup and legacy provenance passed. Binary/configuration/registry/shell
+arguments/Start shortcut/card readback matches 0.1.1.
 
-- Apply the specification's Explorer/Windows contract to the actual WPF shell,
-  data views, menus, dialogs and Appearance settings without framework migration.
-- Default to system theme/accent; persist System/Light/Dark and custom accent
-  overrides. Handle live Windows preference changes, focus and high contrast.
-- Use Huashu for hierarchy/readability and scan-specific state presentation.
-  The user supplied the direction; generic three-option approval ceremony does
-  not add an execution gate. No HTML demo is required for this native product.
-- Inspect measured native layouts/screenshots at specified DIPs/scales and states,
-  actual Windows notification handling and settings persistence after restart.
+Original profile/history preserved; copied C: snapshot hash matches; all 37
+pre-existing Diskweft histories match inventory. Recovery manifests, 44 files,
+five registry exports, two shortcuts and original card verified. Recovered original
+scanner and snapshot reader executed successfully. Full system reinstall was not
+exercised; its exact restoration procedure and material remain retained.
 
-### S4 - Integrated verification and final delivery
+SpaceScan's original native uninstaller succeeded; executable/install folder,
+uninstall/executable registrations, three shell verbs and two shortcuts absent.
+Obsolete card retired through transactional cleanup. Final read-only installed/
+data/recovery/routes/cleanup reconciliation passed. Pathweft remains untouched
+under explicit user exclusion, not a deferral.
+See [S5 evidence and recovery boundaries](verification/S5-SYSTEM-REPLACEMENT.md).
 
-- Close compatibility for CLI/reports, history/compare, search/duplicates, file
-  actions and side-by-side identity; reuse unchanged applicable stage evidence.
-- Execute real-path coverage and paired large classic/MFT performance measurements
-  against retained baseline. Close latency/memory/backlog and scan-time criteria.
-- Review relevant upstream drift, exact package contents, licenses, updater route
-  and install/uninstall recovery. No unresolved required blockers/deferrals.
-- Commit verified integrated code; publish normal v0.1.0 with installer, portable
-  ZIP, checksums and truthful notes on Darkaxt/Diskweft. Independently retrieve and
-  verify package version/hash/signature status, identities and packaged behavior.
-- Record actual source/tag/assets/publication state and cleanup receipts. A green
-  build, source push, draft release or CI artifact does not close delivery.
+## Cleanup and retained outputs
 
-### S5 - Replace installed SpaceScan with Diskweft
+All spent scratch consumers exited and required cleanup transactions closed.
+D: native-I/O scratch used the documented exception and was cleaned after use.
+Inno's unavoidable C: staging was retired with the same reviewed ticket through
+the administrator broker. No broad profile/Temp sweep. Versioned packages,
+baseline, required private evidence and intentional G: recovery remain preserved.
 
-- Inventory installed application/version, settings/history and actual consumers.
-  Record Pathweft's scan route but leave its integration to the user.
-- Establish a concrete rollback record; preserve original user data and compare
-  hashes/conversion results before switching routes.
-- Install the independently verified S4 package, migrate applicable settings and
-  history, then switch owned shortcuts/shell/caller registrations to Diskweft.
-- Verify real installed launches, shell arguments, classic/MFT operation and
-  history access; prove rollback before retiring obsolete SpaceScan registrations
-  or installation files. Use broker consent for administrator changes and the
-  proper reviewed cleanup path for explicitly retired generated/install outputs.
-- Do not perform S5 during S1. A published release alone cannot close MIGRATE-01.
+| Final transaction | APPLIED result |
+| --- | --- |
+| `265f13bdd6ca51c127fcefbe951b05db` | 4,383 members / 2,457,915,709 logical bytes; detached optimization VHD/native scratch |
+| `3b6761e6128271a91d1b5d06cf875929` | 6,645 members / 11,747,633 logical bytes; maintenance native/build/guest scratch |
+| `0a50d850cf836dabecd22e7efad54f47` | 18 members / 4,492,290 logical bytes; obsolete generated candidates/card |
+| `3798292eb2651109aca3092964e28e09` | 63 members / 6,547,082 logical bytes; independent delivery/fixture scratch |
+| `a2820bb6468b4b867fa264a5b8363796` | Six members / 4,422,817 logical bytes; native staging/three owned fixture histories |
 
-## Gap and deferral ledger
-
-No required work has been moved out of its assigned stage. No tracked deferrals.
-Future stages are planned ownership, not completion claims or unnamed deferrals.
-If a required item must move, record its exact criterion, named destination,
-current-stage independence and final verification here before proceeding.
-
-Every blocker records criterion, concrete reason, internal/external cause,
-resolution condition and dependent work. An implementable acceptance gap keeps
-the stage ACTIVE; BLOCKED is reserved for a justified parked impediment.
+Earlier S4 million-fixture cleanup closed after late diagnostic residuals were
+separately reviewed; S3/S4 evidence records original transactions. No required
+operation or cleanup residual remains active. Do not replay completed migration,
+installation, native uninstall or cleanup operations.
 
 ## Closure assessment
 
-S0's verified scope adds documentation and controlled baseline helpers, reusing
-the existing build. No production code changed and no material consolidation
-finding obstructs S1. The inherited identity/ownership problems are already
-assigned S1 requirements, not justification for speculative S0 refactoring.
-At later stage closure, inspect only implemented scope for evidence-backed debt
-obstructing required integration and record findings here.
+Final reconciliation covers every ENV/ID/SCAN/UI/COMPAT/PERF/VERIFY/DELIVER/MIGRATE
+requirement and the complete observable design contract. No required blocker,
+deferral or missing integration remains in authorized scope.
 
-S1 closure assessment: publication/scan state is owned by `ScanSession`, display
-projection and asynchronous listing lifetime by `ClassicUI`; CLI and GUI share
-the classic walk. No duplicate scanner or speculative framework was introduced.
-The query directory cache is invalidated at each new scan generation. No material
-required consolidation remains before S2; full MFT streaming/theming/performance
-and package acceptance stay in their existing assigned stages.
-
-S2 closure assessment: raw parsing/runlist code remains shared, the obsolete
-final-only scan import path was removed, and scanner/dispatcher ownership remains
-explicit. Pending exclusion names are reread from compact record references;
-failed attempts have one explicit replacement transition. No material required
-consolidation obstructs S3. S4 still owns complete performance qualification and
-final package verification; no intermediate product release was created.
-
-S3 closure assessment: Appearance owns palette/lifetime changes and existing WPF
-views share dynamic resources. Native caption and capability-checked solid
-surfaces replace the inherited decorative glass path. No competing state owner,
-framework migration or required consolidation obstructs S4.
-
-S4 pre-release closure assessment: one parser owns scanner state, one dispatcher
-owns its projection. The bounded raw-reader pipeline cancels waits and joins its
-reader before handle close; no arbitrary lifecycle timeout or disk fanout.
-No material consolidation finding obstructs final release or the S5 migration.
+One scanner owns mutable state, one dispatcher owns projection; classic/CLI share
+traversal, MFT parsing remains shared. Attempt generation owns listing/publication
+lifetime; query cache invalidates at scan boundaries. Bounded raw reader joins
+before handle close, without arbitrary lifecycle timeouts or broad disk fanout.
+Appearance owns palette/native capabilities, without framework migration. Sorting
+reuses stable rows; missing artwork uses text. Replacement uses native installer/
+uninstaller and independent identities with original recovery, without a legacy
+compatibility layer. No material consolidation finding requires another stage.
